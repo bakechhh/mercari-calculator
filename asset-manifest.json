@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/mercari-url-generator/static/css/main.5a9b243e.css",
+    "main.js": "/mercari-url-generator/static/js/main.efd07e49.js",
+    "index.html": "/mercari-url-generator/index.html",
+    "main.5a9b243e.css.map": "/mercari-url-generator/static/css/main.5a9b243e.css.map",
+    "main.efd07e49.js.map": "/mercari-url-generator/static/js/main.efd07e49.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5a9b243e.css",
+    "static/js/main.efd07e49.js"
+  ]
+}
