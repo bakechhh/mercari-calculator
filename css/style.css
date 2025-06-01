@@ -243,6 +243,36 @@ select:focus {
     justify-content: center;
 }
 
+/* カスタム材料入力 */
+.custom-material-input {
+    grid-column: 1 / span 2;
+    margin-top: 0.5rem;
+}
+
+/* 直接入力選択時の材料入力行 */
+.material-input-row:has(.custom-material-input) {
+    grid-template-rows: auto auto;
+}
+
+.material-input-row:has(.custom-material-input) .material-select {
+    grid-column: 1 / span 2;
+}
+
+.material-input-row:has(.custom-material-input) .material-quantity {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.material-input-row:has(.custom-material-input) .material-price {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.material-input-row:has(.custom-material-input) .remove-material-btn {
+    grid-column: 4;
+    grid-row: 1 / span 2;
+}
+
 /* 結果ボックス */
 .result-box {
     background-color: var(--bg-primary);
@@ -468,6 +498,11 @@ select:focus {
     .material-quantity,
     .material-price {
         width: 100%;
+    }
+    
+    .custom-material-input {
+        grid-column: 1;
+        margin-top: 0.5rem;
     }
     
     .modal-actions {
