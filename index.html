@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff0211">
+    <meta name="description" content="メルカリ売却の実質手取りを計算・管理するツール">
+    <title>メルカリ売却管理</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body>
+    <div id="app">
+        <!-- ヘッダー -->
+        <header>
+            <h1>メルカリ売却管理</h1>
+            <button id="theme-toggle" class="icon-btn" aria-label="テーマ切替">🌓</button>
+        </header>
+
+        <!-- タブナビゲーション -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="calculator">計算</button>
+            <button class="tab-btn" data-tab="history">履歴</button>
+            <button class="tab-btn" data-tab="materials">材料</button>
+            <button class="tab-btn" data-tab="settings">設定</button>
+        </nav>
+
+        <!-- メインコンテンツ -->
+        <main>
+            <!-- 計算タブ -->
+            <div id="calculator-tab" class="tab-content active">
+                <form id="calc-form">
+                    <div class="form-group">
+                        <label for="product-name">商品名</label>
+                        <input type="text" id="product-name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="selling-price">売却価格（円）</label>
+                        <input type="number" id="selling-price" required min="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label>材料費</label>
+                        <div id="material-inputs">
+                            <div class="material-input-row">
+                                <select class="material-select">
+                                    <option value="">材料を選択</option>
+                                </select>
+                                <input type="number" class="material-quantity" placeholder="数量" min="0" step="0.01">
+                                <input type="number" class="material-price" placeholder="単価" min="0">
+                                <button type="button" class="remove-material-btn">×</button>
+                            </div>
+                        </div>
+                        <button type="button" id="add-material-btn" class="secondary-btn">+ 材料追加</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="shipping-fee">送料（円）</label>
+                        <input type="number" id="shipping-fee" required min="0" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="indirect-costs">間接費用（梱包材等）（円）</label>
+                        <input type="number" id="indirect-costs" min="0" value="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="commission-rate">手数料率（%）</label>
+                        <input type="number" id="commission-rate" required min="0" max="100" value="10" step="0.1">
+                    </div>
+
+                    <div class="result-box">
+                        <h3>計算結果</h3>
+                        <div class="result-item">
+                            <span>売却価格：</span>
+                            <span id="result-price">¥0</span>
+                        </div>
+                        <div class="result-item">
+                            <span>手数料：</span>
+                            <span id="result-commission">-¥0</span>
+                        </div>
+                        <div class="result-item">
+                            <span>材料費：</span>
+                            <span id="result-material">-¥0</span>
+                        </div>
+                        <div class="result-item">
+                            <span>送料：</span>
+                            <span id="result-shipping">-¥0</span>
+                        </div>
+                        <div class="result-item">
+                            <span>間接費用：</span>
+                            <span id="result-indirect">-¥0</span>
+                        </div>
+                        <div class="result-item total">
+                            <span>実質手取り：</span>
+                            <span id="result-net">¥0</span>
+                        </div>
+                        <div class="result-item">
+                            <span>利益率：</span>
+                            <span id="result-profit-rate">0%</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="primary-btn">保存</button>
+                </form>
+            </div>
+
+            <!-- 履歴タブ -->
+            <div id="history-tab" class="tab-content">
+                <div class="history-header">
+                    <input type="text" id="history-search" placeholder="検索...">
+                    <select id="history-filter">
+                        <option value="all">すべて</option>
+                        <option value="week">今週</option>
+                        <option value="month">今月</option>
+                        <option value="year">今年</option>
+                    </select>
+                </div>
+                <div id="history-summary" class="summary-box">
+                    <div class="summary-item">
+                        <span>合計売上：</span>
+                        <span id="total-sales">¥0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>合計利益：</span>
+                        <span id="total-profit">¥0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>平均利益率：</span>
+                        <span id="avg-profit-rate">0%</span>
+                    </div>
+                </div>
+                <div id="history-list"></div>
+            </div>
+
+            <!-- 材料タブ -->
+            <div id="materials-tab" class="tab-content">
+                <button id="add-new-material" class="primary-btn">+ 新規材料追加</button>
+                <div id="material-form" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <h3>材料登録</h3>
+                        <form id="material-register-form">
+                            <div class="form-group">
+                                <label for="material-name">材料名</label>
+                                <input type="text" id="material-name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="material-category">カテゴリー</label>
+                                <input type="text" id="material-category" placeholder="例: パーツ、素材">
+                            </div>
+                            <div class="form-group">
+                                <label for="material-unit-price">単価（円）</label>
+                                <input type="number" id="material-unit-price" required min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="material-unit">単位</label>
+                                <input type="text" id="material-unit" placeholder="例: 個、g、ml" value="個">
+                            </div>
+                            <div class="form-group">
+                                <label for="material-purchase-quantity">購入数量</label>
+                                <input type="number" id="material-purchase-quantity" min="1" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="material-purchase-price">購入総額（円）</label>
+                                <input type="number" id="material-purchase-price" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="material-shipping">購入時送料（円）</label>
+                                <input type="number" id="material-shipping" min="0" value="0">
+                            </div>
+                            <div class="calculated-price">
+                                計算単価: <span id="calculated-unit-price">¥0</span> / <span id="calculated-unit">個</span>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="submit" class="primary-btn">保存</button>
+                                <button type="button" class="secondary-btn" onclick="closeMaterialForm()">キャンセル</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div id="materials-list"></div>
+            </div>
+
+            <!-- 設定タブ -->
+            <div id="settings-tab" class="tab-content">
+                <div class="settings-section">
+                    <h3>データ管理</h3>
+                    <button id="export-json" class="primary-btn">データをエクスポート (JSON)</button>
+                    <button id="import-json" class="secondary-btn">データをインポート (JSON)</button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                    <button id="export-csv" class="primary-btn">履歴をCSV出力</button>
+                    <button id="clear-data" class="danger-btn">全データを削除</button>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>デフォルト設定</h3>
+                    <div class="form-group">
+                        <label for="default-commission">デフォルト手数料率（%）</label>
+                        <input type="number" id="default-commission" min="0" max="100" step="0.1" value="10">
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>PWA設定</h3>
+                    <button id="install-pwa" class="primary-btn" style="display: none;">ホーム画面に追加</button>
+                    <p class="info-text">このアプリをホーム画面に追加すると、通常のアプリのように使用できます。</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/calculator.js"></script>
+    <script src="js/materials.js"></script>
+    <script src="js/history.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
