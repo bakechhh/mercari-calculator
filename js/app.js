@@ -1,4 +1,3 @@
-// app.js - メインアプリケーション
 const App = {
     deferredPrompt: null,
 
