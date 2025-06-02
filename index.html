@@ -24,6 +24,7 @@
             <button class="tab-btn active" data-tab="calculator">計算</button>
             <button class="tab-btn" data-tab="history">履歴</button>
             <button class="tab-btn" data-tab="materials">材料</button>
+            <button class="tab-btn" data-tab="calendar">カレンダー</button>
             <button class="tab-btn" data-tab="goals">目標</button>
             <button class="tab-btn" data-tab="settings">設定</button>
         </nav>
@@ -210,7 +211,59 @@
                     <p class="info-text">このアプリをホーム画面に追加すると、通常のアプリのように使用できます。</p>
                 </div>
             </div>
-
+            <!-- カレンダータブ -->
+            <div id="calendar-tab" class="tab-content">
+                <div class="calendar-header">
+                    <button class="month-nav-btn" id="cal-prev-month">←</button>
+                    <h2 id="cal-current-month">2024年1月</h2>
+                    <button class="month-nav-btn" id="cal-next-month">→</button>
+                </div>
+            
+                <div class="calendar-summary">
+                    <div class="summary-card">
+                        <span class="summary-label">営業日数</span>
+                        <span class="summary-value" id="cal-business-days">0日</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-label">日平均売上</span>
+                        <span class="summary-value" id="cal-daily-average">¥0</span>
+                    </div>
+                    <div class="summary-card">
+                        <span class="summary-label">最高売上日</span>
+                        <span class="summary-value" id="cal-best-day">-</span>
+                    </div>
+                </div>
+            
+                <div class="calendar-container">
+                    <div class="calendar-weekdays">
+                        <div class="weekday">日</div>
+                        <div class="weekday">月</div>
+                        <div class="weekday">火</div>
+                        <div class="weekday">水</div>
+                        <div class="weekday">木</div>
+                        <div class="weekday">金</div>
+                        <div class="weekday">土</div>
+                    </div>
+                    <div id="calendar-grid" class="calendar-grid">
+                        <!-- カレンダーの日付がここに生成される -->
+                    </div>
+                </div>
+            
+                <!-- 日別詳細モーダル -->
+                <div id="day-detail-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <h3 id="day-detail-title">2024年1月1日の売上</h3>
+                        <div id="day-sales-list"></div>
+                        <div class="day-total">
+                            <span>合計：</span>
+                            <span id="day-total-amount">¥0</span>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="secondary-btn" onclick="Calendar.closeDayDetail()">閉じる</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- 目標タブ -->
             <div id="goals-tab" class="tab-content">
                 <div class="goals-header">
