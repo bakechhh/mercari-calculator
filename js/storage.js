@@ -1,4 +1,3 @@
-// storage.js - ローカルストレージ管理
 const Storage = {
     KEYS: {
         SALES: 'mercari_sales',
