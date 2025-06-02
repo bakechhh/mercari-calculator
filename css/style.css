@@ -924,3 +924,19 @@ select:focus {
         grid-template-columns: 1fr;
     }
 }
+#sales-chart {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* スマホでのグラフ表示改善 */
+@media (max-width: 480px) {
+    .chart-section {
+        padding: 1rem;
+    }
+    
+    #sales-chart {
+        height: 150px !important;
+    }
+}
