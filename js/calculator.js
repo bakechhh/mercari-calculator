@@ -67,7 +67,7 @@ const Calculator = {
                 <option value="custom">直接入力</option>
             </select>
             <input type="number" class="material-quantity" placeholder="数量" min="0" step="0.01">
-            <input type="number" class="material-price" placeholder="単価" min="0">
+            <input type="number" class="material-price" placeholder="単価" min="0" step="0.01">
             <button type="button" class="remove-material-btn">×</button>
         `;
         
