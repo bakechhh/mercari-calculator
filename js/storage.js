@@ -4,7 +4,9 @@ const Storage = {
         SALES: 'mercari_sales',
         MATERIALS: 'mercari_materials',
         SETTINGS: 'mercari_settings',
-        THEME: 'mercari_theme'
+        THEME: 'mercari_theme',
+        GOALS: 'mercari_goals',
+        RECORDS: 'mercari_records'
     },
 
     // 売却データ
@@ -102,8 +104,10 @@ const Storage = {
             sales: this.getSales(),
             materials: this.getMaterials(),
             settings: this.getSettings(),
+            goals: this.getGoals(),
+            records: this.getRecords(),
             exportDate: new Date().toISOString(),
-            version: '1.0'
+            version: '1.1'
         };
     },
 
@@ -118,11 +122,57 @@ const Storage = {
             if (data.settings) {
                 localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(data.settings));
             }
+            if (data.goals) {
+                localStorage.setItem(this.KEYS.GOALS, JSON.stringify(data.goals));
+            }
+            if (data.records) {
+                localStorage.setItem(this.KEYS.RECORDS, JSON.stringify(data.records));
+            }
             return true;
         } catch (error) {
             console.error('Import error:', error);
             return false;
         }
+    },
+
+    // 目標データ
+    getGoals() {
+        const data = localStorage.getItem(this.KEYS.GOALS);
+        return data ? JSON.parse(data) : {};
+    },
+
+    getGoal(yearMonth) {
+        const goals = this.getGoals();
+        return goals[yearMonth] || {
+            yearMonth,
+            targetAmount: 0,
+            currentAmount: 0,
+            salesCount: 0,
+            achieved: false,
+            achievedDate: null
+        };
+    },
+
+    saveGoal(yearMonth, goal) {
+        const goals = this.getGoals();
+        goals[yearMonth] = { ...goals[yearMonth], ...goal, yearMonth };
+        localStorage.setItem(this.KEYS.GOALS, JSON.stringify(goals));
+        return goals[yearMonth];
+    },
+
+    // 記録データ
+    getRecords() {
+        const data = localStorage.getItem(this.KEYS.RECORDS);
+        return data ? JSON.parse(data) : {
+            maxMonthlySales: { amount: 0, yearMonth: null },
+            maxMonthlySalesCount: { count: 0, yearMonth: null },
+            maxAchievementRate: { rate: 0, yearMonth: null }
+        };
+    },
+
+    updateRecords(records) {
+        localStorage.setItem(this.KEYS.RECORDS, JSON.stringify(records));
+        return records;
     },
 
     // データクリア
