@@ -14,6 +14,7 @@ const App = {
         History.init();
         Materials.init();
         Export.init();
+        Goals.init();
         
         // アニメーション用CSS追加
         this.addAnimations();
@@ -60,6 +61,11 @@ const App = {
                 if (targetTab === 'history') {
                     History.renderHistory();
                 }
+                
+                // 目標タブが選択されたら更新
+                if (targetTab === 'goals') {
+                    Goals.render();
+                }
             });
         });
     },
@@ -83,7 +89,7 @@ const App = {
     async registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             try {
-                const registration = await navigator.serviceWorker.register('./sw.js');
+                const registration = await navigator.serviceWorker.register('/sw.js');
                 console.log('ServiceWorker registered:', registration);
             } catch (error) {
                 console.log('ServiceWorker registration failed:', error);
