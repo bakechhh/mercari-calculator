@@ -1,4 +1,3 @@
-// calculator.js - 計算機能
 const Calculator = {
     init() {
         this.form = document.getElementById('calc-form');
