@@ -49,14 +49,6 @@ const Calculator = {
     },
 
     addMaterialRow() {
-        // 既存の直接入力欄をすべて非表示にする
-        document.querySelectorAll('.material-input-row').forEach(row => {
-            const select = row.querySelector('.material-select');
-            if (select.value !== 'custom') {
-                this.hideCustomMaterialInput(row);
-            }
-        });
-        
         const container = document.getElementById('material-inputs');
         const row = document.createElement('div');
         row.className = 'material-input-row';
@@ -107,47 +99,11 @@ const Calculator = {
         const select = row.querySelector('.material-select');
         const priceInput = row.querySelector('.material-price');
         
-        if (element === select) {
-            if (select.value === 'custom') {
-                // 直接入力の場合、材料名入力欄を表示
-                this.showCustomMaterialInput(row);
-                priceInput.value = ''; // 単価をクリア
-            } else if (select.value && select.value !== '') {
-                // 既存材料の場合
-                this.hideCustomMaterialInput(row);
-                const option = select.querySelector(`option[value="${select.value}"]`);
-                if (option) {
-                    priceInput.value = option.dataset.price;
-                }
-            } else {
-                // 未選択の場合
-                this.hideCustomMaterialInput(row);
-                priceInput.value = '';
+        if (element === select && select.value && select.value !== 'custom') {
+            const option = select.querySelector(`option[value="${select.value}"]`);
+            if (option) {
+                priceInput.value = option.dataset.price;
             }
-        }
-    },
-
-    showCustomMaterialInput(row) {
-        // 既存のカスタム入力欄があれば削除
-        const existingInput = row.querySelector('.custom-material-input');
-        if (existingInput) return;
-        
-        // カスタム材料名入力欄を追加
-        const customInput = document.createElement('input');
-        customInput.type = 'text';
-        customInput.className = 'custom-material-input';
-        customInput.placeholder = '材料名を入力';
-        customInput.required = true;
-        
-        // selectの後に挿入
-        const select = row.querySelector('.material-select');
-        select.parentNode.insertBefore(customInput, select.nextSibling);
-    },
-
-    hideCustomMaterialInput(row) {
-        const customInput = row.querySelector('.custom-material-input');
-        if (customInput) {
-            customInput.remove();
         }
     },
 
@@ -210,9 +166,7 @@ const Calculator = {
                 };
                 
                 if (select.value === 'custom') {
-                    // カスタム材料名入力欄から名前を取得
-                    const customInput = row.querySelector('.custom-material-input');
-                    material.name = customInput ? customInput.value : '直接入力材料';
+                    material.name = '直接入力材料';
                     material.id = null;
                 } else {
                     const option = select.querySelector(`option[value="${select.value}"]`);
@@ -255,6 +209,21 @@ const Calculator = {
         };
         
         Storage.saveSale(sale);
+        
+        // エフェクト表示
+        if (typeof Effects !== 'undefined') {
+            Effects.showSaveEffect(sale.sellingPrice);
+        }
+        
+        // 目標データを更新
+        if (typeof Goals !== 'undefined') {
+            const currentYearMonth = new Date().toISOString().slice(0, 7);
+            const goal = Storage.getGoal(currentYearMonth);
+            const sales = Storage.getSales().filter(s => s.date.startsWith(currentYearMonth));
+            goal.currentAmount = sales.reduce((sum, s) => sum + s.sellingPrice, 0);
+            goal.salesCount = sales.length;
+            Storage.saveGoal(currentYearMonth, goal);
+        }
         
         // フォームリセット
         this.form.reset();
