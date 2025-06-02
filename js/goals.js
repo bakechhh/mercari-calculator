@@ -1,3 +1,4 @@
+// goals.js - 目標管理機能
 const Goals = {
     currentYearMonth: '',
     chart: null,
@@ -67,6 +68,9 @@ const Goals = {
         // 現在の売上を計算
         goal.currentAmount = sales.reduce((sum, sale) => sum + sale.sellingPrice, 0);
         goal.salesCount = sales.length;
+
+        // ここで現在の月のデータも保存！
+        Storage.saveGoal(this.currentYearMonth, goal);
 
         // 達成率を計算
         const achievementRate = goal.targetAmount > 0 ? 
@@ -176,26 +180,48 @@ const Goals = {
     updateRecords() {
         const records = Storage.getRecords();
         const allGoals = Storage.getGoals();
+        
+        // 現在の月のデータも確実に含める
+        const currentGoal = Storage.getGoal(this.currentYearMonth);
+        allGoals[this.currentYearMonth] = currentGoal;
+        
         let updated = false;
 
-        // 全月の目標をチェック
+        // 全月の目標をチェック（現在月も含む）
         Object.values(allGoals).forEach(goal => {
+            // 売上データを再計算して最新に
+            if (goal.yearMonth) {
+                const sales = this.getMonthSales(goal.yearMonth);
+                goal.currentAmount = sales.reduce((sum, sale) => sum + sale.sellingPrice, 0);
+                goal.salesCount = sales.length;
+            }
+            
             // 最高売上
-            if (goal.currentAmount > records.maxMonthlySales.amount) {
+            if (goal.currentAmount > 0 && goal.currentAmount > records.maxMonthlySales.amount) {
                 records.maxMonthlySales = {
                     amount: goal.currentAmount,
                     yearMonth: goal.yearMonth
                 };
                 updated = true;
+                
+                // NEW RECORD エフェクト
+                if (typeof Effects !== 'undefined' && goal.yearMonth === this.currentYearMonth) {
+                    Effects.showNewRecordEffect('月間最高売上');
+                }
             }
 
             // 最多販売回数
-            if (goal.salesCount > records.maxMonthlySalesCount.count) {
+            if (goal.salesCount > 0 && goal.salesCount > records.maxMonthlySalesCount.count) {
                 records.maxMonthlySalesCount = {
                     count: goal.salesCount,
                     yearMonth: goal.yearMonth
                 };
                 updated = true;
+                
+                // NEW RECORD エフェクト
+                if (typeof Effects !== 'undefined' && goal.yearMonth === this.currentYearMonth) {
+                    Effects.showNewRecordEffect('月間最多販売');
+                }
             }
 
             // 最高達成率
@@ -207,6 +233,11 @@ const Goals = {
                         yearMonth: goal.yearMonth
                     };
                     updated = true;
+                    
+                    // NEW RECORD エフェクト
+                    if (typeof Effects !== 'undefined' && goal.yearMonth === this.currentYearMonth) {
+                        Effects.showNewRecordEffect('最高達成率');
+                    }
                 }
             }
         });
@@ -289,18 +320,36 @@ const Goals = {
         const canvas = document.getElementById('sales-chart');
         const ctx = canvas.getContext('2d');
         
-        // Canvas サイズ設定
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * window.devicePixelRatio;
-        canvas.height = rect.height * window.devicePixelRatio;
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        // 親要素のサイズを取得
+        const container = canvas.parentElement;
+        const rect = container.getBoundingClientRect();
+        
+        // Canvasの表示サイズを設定
+        canvas.style.width = '100%';
+        canvas.style.height = '200px';
+        
+        // 実際の描画サイズを設定（高解像度対応）
+        const scale = window.devicePixelRatio || 1;
+        canvas.width = rect.width * scale;
+        canvas.height = 200 * scale;
+        ctx.scale(scale, scale);
     },
 
     updateChart() {
         const canvas = document.getElementById('sales-chart');
         const ctx = canvas.getContext('2d');
-        const width = canvas.width / window.devicePixelRatio;
-        const height = canvas.height / window.devicePixelRatio;
+        
+        // Canvas のサイズを再設定
+        const container = canvas.parentElement;
+        const rect = container.getBoundingClientRect();
+        const scale = window.devicePixelRatio || 1;
+        
+        canvas.width = rect.width * scale;
+        canvas.height = 200 * scale;
+        ctx.scale(scale, scale);
+        
+        const width = rect.width;
+        const height = 200;
         
         // クリア
         ctx.clearRect(0, 0, width, height);
