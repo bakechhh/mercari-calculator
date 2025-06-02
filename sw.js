@@ -1,16 +1,18 @@
 // sw.js - Service Worker for offline functionality
 const CACHE_NAME = 'mercari-calc-v1';
 const urlsToCache = [
-    './',
-    './index.html',
-    './css/style.css',
-    './js/app.js',
-    './js/storage.js',
-    './js/calculator.js',
-    './js/materials.js',
-    './js/history.js',
-    './js/export.js',
-    './manifest.json'
+    '/mercari-calculator/',
+    '/mercari-calculator/index.html',
+    '/mercari-calculator/css/style.css',
+    '/mercari-calculator/js/app.js',
+    '/mercari-calculator/js/storage.js',
+    '/mercari-calculator/js/calculator.js',
+    '/mercari-calculator/js/materials.js',
+    '/mercari-calculator/js/history.js',
+    '/mercari-calculator/js/export.js',
+    '/mercari-calculator/js/goals.js',
+    '/mercari-calculator/js/effects.js',
+    '/mercari-calculator/manifest.json'
 ];
 
 // インストール
