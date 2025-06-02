@@ -1,4 +1,3 @@
-// goals.js - 目標管理機能
 const Goals = {
     currentYearMonth: '',
     chart: null,
