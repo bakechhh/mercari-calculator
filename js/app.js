@@ -14,6 +14,7 @@ const App = {
         Materials.init();
         Export.init();
         Goals.init();
+        Calendar.init();
         
         // アニメーション用CSS追加
         this.addAnimations();
@@ -64,6 +65,10 @@ const App = {
                 // 目標タブが選択されたら更新
                 if (targetTab === 'goals') {
                     Goals.render();
+                }
+                // カレンダータブが選択されたら更新
+                if (targetTab === 'calendar') {
+                    Calendar.render();
                 }
             });
         });
