@@ -1,4 +1,4 @@
-/* リセットと、ベース設定 */
+/* リセットとベース設定 */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -243,6 +243,42 @@ select:focus {
     justify-content: center;
 }
 
+/* カスタム材料入力 - 修正版 */
+.custom-material-input {
+    grid-column: 1 / -1;  /* 全幅に変更 */
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* 直接入力選択時の材料入力行 - 修正版 */
+.material-input-row:has(.custom-material-input) {
+    grid-template-rows: auto auto auto;  /* 3行に変更 */
+}
+
+.material-input-row:has(.custom-material-input) .material-select {
+    grid-column: 1 / -1;  /* 全幅に変更 */
+}
+
+.material-input-row:has(.custom-material-input) .custom-material-input {
+    grid-row: 2;
+}
+
+.material-input-row:has(.custom-material-input) .material-quantity {
+    grid-column: 1 / 3;  /* 幅を広げる */
+    grid-row: 3;
+}
+
+.material-input-row:has(.custom-material-input) .material-price {
+    grid-column: 3 / 5;  /* 幅を広げる */
+    grid-row: 3;
+}
+
+.material-input-row:has(.custom-material-input) .remove-material-btn {
+    grid-column: 4;
+    grid-row: 1;
+    justify-self: end;
+}
+
 /* 結果ボックス */
 .result-box {
     background-color: var(--bg-primary);
@@ -457,47 +493,163 @@ select:focus {
     margin-top: 0.5rem;
 }
 
-/* レスポンシブ */
-@media (max-width: 480px) {
-    .material-input-row {
-        grid-template-columns: 1fr;
-        gap: 0.5rem;
-    }
-    
-    .material-select,
-    .material-quantity,
-    .material-price {
-        width: 100%;
-    }
-    
-    .modal-actions {
-        grid-template-columns: 1fr;
-    }
-    
-    .history-item-details {
-        grid-template-columns: 1fr;
-    }
+/* カレンダータブ */
+.calendar-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
 }
 
-/* PWAインストールボタン */
-#install-pwa {
-    display: none;
+#cal-current-month {
+    font-size: 1.5rem;
+    font-weight: bold;
+    min-width: 150px;
+    text-align: center;
 }
 
-#install-pwa.show {
+.calendar-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    text-align: center;
+}
+
+.summary-label {
     display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
 }
 
-/* ダークモード対応 */
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-        --bg-primary: #1a1a1a;
-        --bg-secondary: #2d2d2d;
-        --text-primary: #ffffff;
-        --text-secondary: #b0b0b0;
-        --border-color: #404040;
-        --shadow: rgba(255, 255, 255, 0.1);
-    }
+.summary-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+
+.calendar-container {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-weight: bold;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0.5rem;
+}
+
+.weekday {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.weekday:first-child {
+    color: #ff4444;
+}
+
+.weekday:last-child {
+    color: #4444ff;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.25rem;
+    min-height: 60px;
+}
+
+.calendar-day:hover {
+    background-color: var(--border-color);
+    transform: scale(1.05);
+}
+
+.calendar-day.other-month {
+    opacity: 0.3;
+}
+
+.calendar-day.has-sales {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: var(--success-color);
+}
+
+.calendar-day.high-profit {
+    background-color: rgba(255, 215, 0, 0.2);
+    border-color: #ffd700;
+}
+
+.day-number {
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.day-sales {
+    font-size: 0.7rem;
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.day-count {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+}
+
+/* 日別詳細 */
+.day-detail-item {
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.day-detail-title {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.day-detail-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.day-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    padding-top: 1rem;
+    border-top: 2px solid var(--border-color);
+    margin-top: 1rem;
 }
 
 /* 目標タブ */
@@ -741,6 +893,8 @@ select:focus {
 #sales-chart {
     width: 100%;
     height: 200px;
+    max-width: 100%;
+    display: block;
 }
 
 /* 目標設定モーダル */
@@ -924,19 +1078,71 @@ select:focus {
         grid-template-columns: 1fr;
     }
 }
-#sales-chart {
-    max-width: 100%;
-    height: auto;
-    display: block;
-}
 
-/* スマホでのグラフ表示改善 */
+/* スマホ対応 */
 @media (max-width: 480px) {
+    .material-input-row {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .material-select,
+    .material-quantity,
+    .material-price {
+        width: 100%;
+    }
+    
+    .custom-material-input {
+        width: 100%;
+    }
+    
+    .modal-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .history-item-details {
+        grid-template-columns: 1fr;
+    }
+    
     .chart-section {
         padding: 1rem;
     }
     
     #sales-chart {
         height: 150px !important;
+    }
+    
+    .calendar-day {
+        min-height: 50px;
+        font-size: 0.7rem;
+    }
+    
+    .day-sales {
+        font-size: 0.6rem;
+    }
+    
+    .day-count {
+        font-size: 0.5rem;
+    }
+}
+
+/* PWAインストールボタン */
+#install-pwa {
+    display: none;
+}
+
+#install-pwa.show {
+    display: block;
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg-primary: #1a1a1a;
+        --bg-secondary: #2d2d2d;
+        --text-primary: #ffffff;
+        --text-secondary: #b0b0b0;
+        --border-color: #404040;
+        --shadow: rgba(255, 255, 255, 0.1);
     }
 }
