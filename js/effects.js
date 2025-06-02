@@ -1,4 +1,3 @@
-// effects.js - アニメーションエフェクト
 const Effects = {
     confettiParticles: [],
     animationId: null,
