@@ -243,36 +243,6 @@ select:focus {
     justify-content: center;
 }
 
-/* カスタム材料入力 */
-.custom-material-input {
-    grid-column: 1 / span 2;
-    margin-top: 0.5rem;
-}
-
-/* 直接入力選択時の材料入力行 */
-.material-input-row:has(.custom-material-input) {
-    grid-template-rows: auto auto;
-}
-
-.material-input-row:has(.custom-material-input) .material-select {
-    grid-column: 1 / span 2;
-}
-
-.material-input-row:has(.custom-material-input) .material-quantity {
-    grid-column: 1;
-    grid-row: 2;
-}
-
-.material-input-row:has(.custom-material-input) .material-price {
-    grid-column: 2;
-    grid-row: 2;
-}
-
-.material-input-row:has(.custom-material-input) .remove-material-btn {
-    grid-column: 4;
-    grid-row: 1 / span 2;
-}
-
 /* 結果ボックス */
 .result-box {
     background-color: var(--bg-primary);
@@ -500,11 +470,6 @@ select:focus {
         width: 100%;
     }
     
-    .custom-material-input {
-        grid-column: 1;
-        margin-top: 0.5rem;
-    }
-    
     .modal-actions {
         grid-template-columns: 1fr;
     }
@@ -532,5 +497,430 @@ select:focus {
         --text-secondary: #b0b0b0;
         --border-color: #404040;
         --shadow: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* 目標タブ */
+.goals-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.month-nav-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.month-nav-btn:hover {
+    transform: scale(1.2);
+}
+
+#current-month-display {
+    font-size: 1.5rem;
+    font-weight: bold;
+    min-width: 150px;
+    text-align: center;
+}
+
+/* 目標設定セクション */
+.goal-setting-section {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.goal-amount-display {
+    background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: 0 4px 15px var(--shadow);
+}
+
+.goal-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.goal-amount {
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin: 1rem 0;
+}
+
+.edit-goal-btn {
+    background: none;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    padding: 0.5rem 1.5rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.edit-goal-btn:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+/* プログレスセクション */
+.progress-section {
+    background-color: var(--bg-primary);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-circle-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 2rem;
+}
+
+.progress-circle {
+    transform: rotate(-90deg);
+}
+
+.progress-bg {
+    fill: none;
+    stroke: var(--border-color);
+    stroke-width: 10;
+}
+
+.progress-fill {
+    fill: none;
+    stroke: var(--accent-color);
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s ease-out;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.progress-percentage {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+.progress-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* 達成率による色変更 */
+.achievement-low .progress-fill {
+    stroke: #f44336;
+}
+
+.achievement-medium .progress-fill {
+    stroke: #ff9800;
+}
+
+.achievement-high .progress-fill {
+    stroke: #2196f3;
+}
+
+.achievement-complete .progress-fill {
+    stroke: #ffd700;
+}
+
+.achievement-complete .progress-section {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+}
+
+/* 詳細カード */
+.progress-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.detail-card {
+    text-align: center;
+    padding: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: var(--border-radius);
+}
+
+.detail-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.detail-value {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+/* 記録セクション */
+.records-section {
+    margin-bottom: 2rem;
+}
+
+.records-section h3 {
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.records-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.record-card {
+    background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.record-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px var(--shadow);
+}
+
+.record-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.record-title {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.record-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    margin-bottom: 0.25rem;
+}
+
+.record-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* グラフセクション */
+.chart-section {
+    background-color: var(--bg-primary);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+}
+
+.chart-section h3 {
+    margin-bottom: 1rem;
+}
+
+#sales-chart {
+    width: 100%;
+    height: 200px;
+}
+
+/* 目標設定モーダル */
+.goal-suggestions {
+    margin-top: 1rem;
+}
+
+.goal-suggestions p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.suggestion-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.suggestion-btn {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.suggestion-btn:hover {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+/* エフェクト用スタイル */
+.amount-popup {
+    position: fixed;
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--success-color);
+    animation: floatUp 2s ease-out forwards;
+    pointer-events: none;
+    z-index: 10000;
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) scale(0.5);
+        opacity: 0;
+    }
+    20% {
+        transform: translateY(-20px) scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-150px) scale(1);
+        opacity: 0;
+    }
+}
+
+.achievement-banner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #333;
+    padding: 3rem 4rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+    z-index: 10001;
+    animation: achievementPop 0.5s ease-out;
+}
+
+.achievement-content {
+    text-align: center;
+}
+
+.achievement-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.achievement-text {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.achievement-subtext {
+    font-size: 1.2rem;
+}
+
+@keyframes achievementPop {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+.achievement-banner.fade-out {
+    animation: fadeOut 0.5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+}
+
+.new-record-effect {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10002;
+    animation: recordPop 0.5s ease-out;
+}
+
+.new-record-content {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 2rem 3rem;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.3);
+}
+
+.new-record-stars {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.new-record-text {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.new-record-type {
+    font-size: 1.1rem;
+}
+
+@keyframes recordPop {
+    0% {
+        transform: translateX(-50%) translateY(-50px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
+.new-record-effect.fade-out {
+    animation: slideDown 0.5s ease-out forwards;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .progress-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .records-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .goal-amount {
+        font-size: 2rem;
+    }
+    
+    .suggestion-buttons {
+        grid-template-columns: 1fr;
     }
 }
