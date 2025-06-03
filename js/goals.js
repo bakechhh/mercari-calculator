@@ -1,4 +1,4 @@
-// goals.js - 目標管理機能
+// goals.js - 目標管理機能（修正版）
 const Goals = {
     currentYearMonth: '',
     chart: null,
@@ -17,8 +17,7 @@ const Goals = {
 
         // 目標編集
         document.getElementById('edit-goal-btn').addEventListener('click', () => this.showGoalModal());
-        document.getElementById('close-goal-modal').addEventListener('click', () => this.closeGoalModal());
-
+        
         // 目標フォーム
         document.getElementById('goal-form').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -38,6 +37,20 @@ const Goals = {
                 this.closeGoalModal();
             }
         });
+        
+        // 閉じるボタン - DOMContentLoadedで確実に設定
+        document.addEventListener('DOMContentLoaded', () => {
+            const closeBtn = document.getElementById('close-goal-modal');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => this.closeGoalModal());
+            }
+        });
+        
+        // 既にDOMが読み込まれている場合の処理
+        const closeBtn = document.getElementById('close-goal-modal');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.closeGoalModal());
+        }
     },
 
     getCurrentYearMonth() {
@@ -279,10 +292,22 @@ const Goals = {
         
         document.getElementById('goal-input').value = goal.targetAmount || '';
         modal.style.display = 'flex';
+        
+        // 閉じるボタンのイベントリスナーを再設定
+        const closeBtn = document.getElementById('close-goal-modal');
+        if (closeBtn) {
+            // 既存のイベントリスナーを削除してから追加
+            const newCloseBtn = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+            newCloseBtn.addEventListener('click', () => this.closeGoalModal());
+        }
     },
 
     closeGoalModal() {
-        document.getElementById('goal-modal').style.display = 'none';
+        const modal = document.getElementById('goal-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     },
 
     saveGoal() {
