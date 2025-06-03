@@ -297,13 +297,16 @@ const Goals = {
     },
 
     showGoalModal() {
-        const modal = document.getElementById('goal-modal');
-        const goalInput = document.getElementById('goal-input');
+        // まずモーダルが存在するか確認
+        let modal = document.getElementById('goal-modal');
         
         if (!modal) {
-            console.error('goal-modal not found');
-            return;
+            // モーダルが存在しない場合は作成
+            this.createGoalModal();
+            modal = document.getElementById('goal-modal');
         }
+        
+        const goalInput = document.getElementById('goal-input');
         
         if (!goalInput) {
             console.error('goal-input not found');
@@ -314,6 +317,9 @@ const Goals = {
         goalInput.value = goal.targetAmount || '';
         modal.style.display = 'flex';
         
+        // 前月実績を表示
+        this.showLastMonthSales();
+        
         // 閉じるボタンのイベントリスナーを再設定
         const closeBtn = document.getElementById('close-goal-modal');
         if (closeBtn) {
@@ -323,7 +329,66 @@ const Goals = {
             newCloseBtn.addEventListener('click', () => this.closeGoalModal());
         }
     },
-
+    createGoalModal() {
+        // モーダルが既に存在する場合は何もしない
+        if (document.getElementById('goal-modal')) return;
+        
+        const modal = document.createElement('div');
+        modal.id = 'goal-modal';
+        modal.className = 'modal';
+        modal.style.display = 'none';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>月間目標を設定</h3>
+                <form id="goal-form">
+                    <div class="form-group">
+                        <label for="goal-input">目標金額（円）</label>
+                        <input type="number" id="goal-input" min="0" step="1000" required>
+                        <div class="goal-suggestions">
+                            <p>参考：前月実績 <span id="last-month-sales">¥0</span></p>
+                            <div class="suggestion-buttons">
+                                <button type="button" class="suggestion-btn" data-amount="30000">¥30,000</button>
+                                <button type="button" class="suggestion-btn" data-amount="50000">¥50,000</button>
+                                <button type="button" class="suggestion-btn" data-amount="100000">¥100,000</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-actions two-buttons">
+                        <button type="submit" class="primary-btn">設定</button>
+                        <button type="button" class="secondary-btn" id="close-goal-modal">キャンセル</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // イベントリスナーを設定
+        const goalForm = modal.querySelector('#goal-form');
+        if (goalForm) {
+            goalForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveGoal();
+            });
+        }
+        
+        // 提案ボタンのイベントリスナー
+        modal.querySelectorAll('.suggestion-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const goalInput = document.getElementById('goal-input');
+                if (goalInput) {
+                    goalInput.value = btn.dataset.amount;
+                }
+            });
+        });
+        
+        // モーダル背景クリックで閉じる
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'goal-modal') {
+                this.closeGoalModal();
+            }
+        });
+    },
     closeGoalModal() {
         const modal = document.getElementById('goal-modal');
         if (modal) {
@@ -365,14 +430,23 @@ const Goals = {
         const lastMonthSales = this.getMonthSales(lastMonthKey);
         const lastMonthAmount = lastMonthSales.reduce((sum, sale) => sum + sale.sellingPrice, 0);
         
-        const lastMonthElement = document.getElementById('last-month-sales');
+        // 要素が存在しない場合は作成
+        let lastMonthElement = document.getElementById('last-month-sales');
+        if (!lastMonthElement) {
+            // 目標設定モーダル内に要素を追加
+            const suggestionParagraph = document.querySelector('.goal-suggestions p');
+            if (suggestionParagraph) {
+                lastMonthElement = document.createElement('span');
+                lastMonthElement.id = 'last-month-sales';
+                suggestionParagraph.innerHTML = `参考：前月実績 <span id="last-month-sales">¥0</span>`;
+                lastMonthElement = document.getElementById('last-month-sales');
+            }
+        }
+        
         if (lastMonthElement) {
             lastMonthElement.textContent = `¥${lastMonthAmount.toLocaleString()}`;
-        } else {
-            console.warn('last-month-sales element not found');
         }
     },
-
     initChart() {
         const canvas = document.getElementById('sales-chart');
         const ctx = canvas.getContext('2d');
