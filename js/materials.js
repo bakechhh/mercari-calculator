@@ -9,47 +9,83 @@ const Materials = {
 
     setupEventListeners() {
         // 新規材料追加ボタン
-        document.getElementById('add-new-material').addEventListener('click', () => {
-            this.showMaterialForm();
-        });
-
+        const addButton = document.getElementById('add-new-material');
+        if (addButton) {
+            addButton.addEventListener('click', () => {
+                this.showMaterialForm();
+            });
+        }
+    
         // 材料登録フォーム
-        document.getElementById('material-register-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveMaterial();
-        });
-
+        const registerForm = document.getElementById('material-register-form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveMaterial();
+            });
+        }
+    
         // 購入数量と総額から単価を計算
         ['material-purchase-quantity', 'material-purchase-price', 'material-shipping'].forEach(id => {
-            document.getElementById(id).addEventListener('input', () => {
-                this.calculateUnitPrice();
-            });
-        });
-
-        // モーダル背景クリックで閉じる
-        document.getElementById('material-form').addEventListener('click', (e) => {
-            if (e.target.id === 'material-form') {
-                this.closeMaterialForm();
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('input', () => {
+                    this.calculateUnitPrice();
+                });
             }
         });
+    
+        // モーダル背景クリックで閉じる
+        const modalForm = document.getElementById('material-form');
+        if (modalForm) {
+            modalForm.addEventListener('click', (e) => {
+                if (e.target.id === 'material-form') {
+                    this.closeMaterialForm();
+                }
+            });
+        }
     },
-
     showMaterialForm(material = null) {
         this.currentEditId = material ? material.id : null;
         const modal = document.getElementById('material-form');
         const form = document.getElementById('material-register-form');
         
+        if (!modal) {
+            console.error('material-form modal not found');
+            return;
+        }
+        
+        if (!form) {
+            console.error('material-register-form not found');
+            return;
+        }
+        
         if (material) {
-            document.getElementById('material-name').value = material.name || '';
-            document.getElementById('material-category').value = material.category || '';
-            document.getElementById('material-unit-price').value = material.unitPrice || '';
-            document.getElementById('material-unit').value = material.unit || '個';
-            document.getElementById('material-purchase-quantity').value = material.purchaseQuantity || '';
-            document.getElementById('material-purchase-price').value = material.purchasePrice || '';
-            document.getElementById('material-shipping').value = material.shippingFee || 0;
+            // 各要素の存在確認を追加
+            const nameInput = document.getElementById('material-name');
+            if (nameInput) nameInput.value = material.name || '';
+            
+            const categoryInput = document.getElementById('material-category');
+            if (categoryInput) categoryInput.value = material.category || '';
+            
+            const unitPriceInput = document.getElementById('material-unit-price');
+            if (unitPriceInput) unitPriceInput.value = material.unitPrice || '';
+            
+            const unitInput = document.getElementById('material-unit');
+            if (unitInput) unitInput.value = material.unit || '個';
+            
+            const purchaseQuantityInput = document.getElementById('material-purchase-quantity');
+            if (purchaseQuantityInput) purchaseQuantityInput.value = material.purchaseQuantity || '';
+            
+            const purchasePriceInput = document.getElementById('material-purchase-price');
+            if (purchasePriceInput) purchasePriceInput.value = material.purchasePrice || '';
+            
+            const shippingInput = document.getElementById('material-shipping');
+            if (shippingInput) shippingInput.value = material.shippingFee || 0;
         } else {
             form.reset();
-            document.getElementById('material-unit').value = '個';
+            const unitInput = document.getElementById('material-unit');
+            if (unitInput) unitInput.value = '個';
         }
         
         modal.style.display = 'flex';
