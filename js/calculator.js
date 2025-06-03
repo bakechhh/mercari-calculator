@@ -1,5 +1,7 @@
-// calculator.js - 計算機能
+// calculator.js - 計算機能（編集機能付き）
 const Calculator = {
+    editingId: null, // 編集中のID
+
     init() {
         this.form = document.getElementById('calc-form');
         this.setupEventListeners();
@@ -12,7 +14,11 @@ const Calculator = {
         // フォーム送信
         this.form.addEventListener('submit', (e) => {
             e.preventDefault();
-            this.saveSale();
+            if (this.editingId) {
+                this.updateSale();
+            } else {
+                this.saveSale();
+            }
         });
 
         // リアルタイム計算
@@ -225,6 +231,193 @@ const Calculator = {
             }
         });
         return materialsData;
+    },
+
+    // 編集用データ読み込み
+    loadSaleForEdit(id) {
+        const sale = Storage.getSales().find(s => s.id === id);
+        if (!sale) return;
+
+        this.editingId = id;
+        
+        // フォームにデータを設定
+        document.getElementById('product-name').value = sale.productName;
+        document.getElementById('selling-price').value = sale.sellingPrice;
+        document.getElementById('shipping-fee').value = sale.shippingFee;
+        document.getElementById('indirect-costs').value = sale.indirectCosts || 0;
+        document.getElementById('commission-rate').value = sale.commissionRate;
+
+        // 材料データを読み込み
+        this.loadMaterialsData(sale.materials);
+        
+        // ボタンテキストを変更
+        const submitBtn = this.form.querySelector('button[type="submit"]');
+        submitBtn.textContent = '更新';
+        submitBtn.className = 'primary-btn';
+        
+        // キャンセルボタンを追加
+        this.addCancelButton();
+        
+        // 計算実行
+        this.calculate();
+    },
+
+    loadMaterialsData(materials) {
+        const container = document.getElementById('material-inputs');
+        container.innerHTML = '';
+        
+        if (materials.length === 0) {
+            this.addMaterialRow();
+            return;
+        }
+        
+        materials.forEach(material => {
+            const row = document.createElement('div');
+            row.className = 'material-input-row';
+            
+            row.innerHTML = `
+                <select class="material-select">
+                    <option value="">材料を選択</option>
+                    <option value="custom">直接入力</option>
+                </select>
+                <input type="number" class="material-quantity" placeholder="数量" min="0" step="0.01" value="${material.quantity}">
+                <input type="number" class="material-price" placeholder="単価" min="0" step="0.01" value="${material.unitPrice}">
+                <button type="button" class="remove-material-btn">×</button>
+            `;
+            
+            container.appendChild(row);
+        });
+        
+        // 材料選択肢を更新
+        this.updateMaterialSelects();
+        
+        // 材料データを設定
+        const rows = container.querySelectorAll('.material-input-row');
+        materials.forEach((material, index) => {
+            const row = rows[index];
+            const select = row.querySelector('.material-select');
+            
+            if (material.id) {
+                // 登録済み材料
+                select.value = material.id;
+            } else {
+                // 直接入力材料
+                select.value = 'custom';
+                this.showCustomMaterialInput(row);
+                const customInput = row.querySelector('.custom-material-input');
+                if (customInput) {
+                    customInput.value = material.name;
+                }
+            }
+        });
+    },
+
+    addCancelButton() {
+        // 既存のキャンセルボタンがあれば削除
+        const existingCancel = document.getElementById('cancel-edit-btn');
+        if (existingCancel) {
+            existingCancel.remove();
+        }
+        
+        const submitBtn = this.form.querySelector('button[type="submit"]');
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.id = 'cancel-edit-btn';
+        cancelBtn.className = 'secondary-btn';
+        cancelBtn.textContent = 'キャンセル';
+        cancelBtn.style.marginTop = '0.5rem';
+        
+        cancelBtn.addEventListener('click', () => {
+            this.cancelEdit();
+        });
+        
+        submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
+    },
+
+    cancelEdit() {
+        this.editingId = null;
+        
+        // フォームリセット
+        this.form.reset();
+        this.loadDefaults();
+        
+        // 材料入力をリセット
+        const container = document.getElementById('material-inputs');
+        container.innerHTML = '';
+        this.addMaterialRow();
+        
+        // ボタンを元に戻す
+        const submitBtn = this.form.querySelector('button[type="submit"]');
+        submitBtn.textContent = '保存';
+        
+        const cancelBtn = document.getElementById('cancel-edit-btn');
+        if (cancelBtn) {
+            cancelBtn.remove();
+        }
+        
+        this.calculate();
+    },
+
+    updateSale() {
+        const productName = document.getElementById('product-name').value;
+        const sellingPrice = parseFloat(document.getElementById('selling-price').value) || 0;
+        const shippingFee = parseFloat(document.getElementById('shipping-fee').value) || 0;
+        const indirectCosts = parseFloat(document.getElementById('indirect-costs').value) || 0;
+        const commissionRate = parseFloat(document.getElementById('commission-rate').value) || 0;
+        
+        const materials = this.getMaterialsData();
+        const materialCost = materials.reduce((sum, m) => sum + m.totalPrice, 0);
+        const commission = Math.floor(sellingPrice * (commissionRate / 100));
+        const totalCost = commission + materialCost + shippingFee + indirectCosts;
+        const netIncome = sellingPrice - totalCost;
+        const profitRate = sellingPrice > 0 ? ((netIncome / sellingPrice) * 100).toFixed(1) : 0;
+        
+        const updatedSale = {
+            productName,
+            sellingPrice,
+            materials,
+            materialCost,
+            shippingFee,
+            indirectCosts,
+            commissionRate,
+            commission,
+            netIncome,
+            profitRate: parseFloat(profitRate)
+        };
+        
+        Storage.updateSale(this.editingId, updatedSale);
+        
+        // 編集モードを終了
+        this.editingId = null;
+        
+        // フォームリセット
+        this.form.reset();
+        this.loadDefaults();
+        
+        // 材料入力をリセット
+        const container = document.getElementById('material-inputs');
+        container.innerHTML = '';
+        this.addMaterialRow();
+        
+        // ボタンを元に戻す
+        const submitBtn = this.form.querySelector('button[type="submit"]');
+        submitBtn.textContent = '保存';
+        
+        const cancelBtn = document.getElementById('cancel-edit-btn');
+        if (cancelBtn) {
+            cancelBtn.remove();
+        }
+        
+        // 履歴タブに切り替え
+        document.querySelector('[data-tab="history"]').click();
+        
+        // 目標データも更新
+        if (typeof Goals !== 'undefined') {
+            Goals.render();
+        }
+        
+        // 成功メッセージ
+        this.showNotification('更新しました！');
     },
 
     saveSale() {
