@@ -288,9 +288,20 @@ const Goals = {
 
     showGoalModal() {
         const modal = document.getElementById('goal-modal');
-        const goal = Storage.getGoal(this.currentYearMonth);
+        const goalInput = document.getElementById('goal-input');
         
-        document.getElementById('goal-input').value = goal.targetAmount || '';
+        if (!modal) {
+            console.error('goal-modal not found');
+            return;
+        }
+        
+        if (!goalInput) {
+            console.error('goal-input not found');
+            return;
+        }
+        
+        const goal = Storage.getGoal(this.currentYearMonth);
+        goalInput.value = goal.targetAmount || '';
         modal.style.display = 'flex';
         
         // 閉じるボタンのイベントリスナーを再設定
@@ -311,7 +322,13 @@ const Goals = {
     },
 
     saveGoal() {
-        const amount = parseInt(document.getElementById('goal-input').value);
+        const goalInput = document.getElementById('goal-input');
+        if (!goalInput) {
+            console.error('goal-input not found in saveGoal');
+            return;
+        }
+        
+        const amount = parseInt(goalInput.value);
         
         if (amount >= 0) {
             const goal = Storage.getGoal(this.currentYearMonth);
