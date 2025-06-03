@@ -176,7 +176,7 @@
                             <div class="calculated-price">
                                 計算単価: <span id="calculated-unit-price">¥0</span> / <span id="calculated-unit">個</span>
                             </div>
-                            <div class="modal-actions">
+                            <div class="modal-actions two-buttons">
                                 <button type="submit" class="primary-btn">保存</button>
                                 <button type="button" class="secondary-btn" onclick="closeMaterialForm()">キャンセル</button>
                             </div>
@@ -186,31 +186,6 @@
                 <div id="materials-list"></div>
             </div>
 
-            <!-- 設定タブ -->
-            <div id="settings-tab" class="tab-content">
-                <div class="settings-section">
-                    <h3>データ管理</h3>
-                    <button id="export-json" class="primary-btn">データをエクスポート (JSON)</button>
-                    <button id="import-json" class="secondary-btn">データをインポート (JSON)</button>
-                    <input type="file" id="import-file" accept=".json" style="display: none;">
-                    <button id="export-csv" class="primary-btn">履歴をCSV出力</button>
-                    <button id="clear-data" class="danger-btn">全データを削除</button>
-                </div>
-                
-                <div class="settings-section">
-                    <h3>デフォルト設定</h3>
-                    <div class="form-group">
-                        <label for="default-commission">デフォルト手数料率（%）</label>
-                        <input type="number" id="default-commission" min="0" max="100" step="0.1" value="10">
-                    </div>
-                </div>
-
-                <div class="settings-section">
-                    <h3>PWA設定</h3>
-                    <button id="install-pwa" class="primary-btn" style="display: none;">ホーム画面に追加</button>
-                    <p class="info-text">このアプリをホーム画面に追加すると、通常のアプリのように使用できます。</p>
-                </div>
-            </div>
             <!-- カレンダータブ -->
             <div id="calendar-tab" class="tab-content">
                 <div class="calendar-header">
@@ -264,6 +239,7 @@
                     </div>
                 </div>
             </div>
+
             <!-- 目標タブ -->
             <div id="goals-tab" class="tab-content">
                 <div class="goals-header">
@@ -336,33 +312,59 @@
                     <h3>📊 売上推移</h3>
                     <canvas id="sales-chart" width="300" height="200"></canvas>
                 </div>
+            </div>
 
-                <!-- 目標設定モーダル -->
-                <div id="goal-modal" class="modal" style="display: none;">
-                    <div class="modal-content">
-                        <h3>月間目標を設定</h3>
-                        <form id="goal-form">
-                            <div class="form-group">
-                                <label for="goal-input">目標金額（円）</label>
-                                <input type="number" id="goal-input" min="0" step="1000" required>
-                                <div class="goal-suggestions">
-                                    <p>参考：前月実績 <span id="last-month-sales">¥0</span></p>
-                                    <div class="suggestion-buttons">
-                                        <button type="button" class="suggestion-btn" data-amount="30000">¥30,000</button>
-                                        <button type="button" class="suggestion-btn" data-amount="50000">¥50,000</button>
-                                        <button type="button" class="suggestion-btn" data-amount="100000">¥100,000</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="modal-actions two-buttons">
-                                <button type="submit" class="primary-btn">設定</button>
-                                <button type="button" class="secondary-btn" id="close-goal-modal">キャンセル</button>
-                            </div>
-                        </form>
+            <!-- 設定タブ -->
+            <div id="settings-tab" class="tab-content">
+                <div class="settings-section">
+                    <h3>データ管理</h3>
+                    <button id="export-json" class="primary-btn">データをエクスポート (JSON)</button>
+                    <button id="import-json" class="secondary-btn">データをインポート (JSON)</button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                    <button id="export-csv" class="primary-btn">履歴をCSV出力</button>
+                    <button id="clear-data" class="danger-btn">全データを削除</button>
+                </div>
+                
+                <div class="settings-section">
+                    <h3>デフォルト設定</h3>
+                    <div class="form-group">
+                        <label for="default-commission">デフォルト手数料率（%）</label>
+                        <input type="number" id="default-commission" min="0" max="100" step="0.1" value="10">
                     </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>PWA設定</h3>
+                    <button id="install-pwa" class="primary-btn" style="display: none;">ホーム画面に追加</button>
+                    <p class="info-text">このアプリをホーム画面に追加すると、通常のアプリのように使用できます。</p>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- 目標設定モーダル -->
+    <div id="goal-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>月間目標を設定</h3>
+            <form id="goal-form">
+                <div class="form-group">
+                    <label for="goal-input">目標金額（円）</label>
+                    <input type="number" id="goal-input" min="0" step="1000" required>
+                    <div class="goal-suggestions">
+                        <p>参考：前月実績 <span id="last-month-sales">¥0</span></p>
+                        <div class="suggestion-buttons">
+                            <button type="button" class="suggestion-btn" data-amount="30000">¥30,000</button>
+                            <button type="button" class="suggestion-btn" data-amount="50000">¥50,000</button>
+                            <button type="button" class="suggestion-btn" data-amount="100000">¥100,000</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions two-buttons">
+                    <button type="submit" class="primary-btn">設定</button>
+                    <button type="button" class="secondary-btn" id="close-goal-modal">キャンセル</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="js/storage.js"></script>
