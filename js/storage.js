@@ -27,7 +27,13 @@ const Storage = {
         const sales = this.getSales();
         const index = sales.findIndex(s => s.id === id);
         if (index !== -1) {
-            sales[index] = { ...sales[index], ...updatedSale };
+            // 元の日付とIDは保持する
+            sales[index] = { 
+                ...sales[index], 
+                ...updatedSale,
+                id: sales[index].id,
+                date: sales[index].date
+            };
             localStorage.setItem(this.KEYS.SALES, JSON.stringify(sales));
             return sales[index];
         }
