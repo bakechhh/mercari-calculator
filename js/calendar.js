@@ -179,9 +179,18 @@ const Calendar = {
         const date = new Date(dateStr);
         const dateDisplay = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
         
-        document.getElementById('day-detail-title').textContent = `${dateDisplay}の売上`;
-        
+        // 要素の存在確認
+        const titleElement = document.getElementById('day-detail-title');
         const listContainer = document.getElementById('day-sales-list');
+        const totalElement = document.getElementById('day-total-amount');
+        const modalElement = document.getElementById('day-detail-modal');
+        
+        if (!titleElement || !listContainer || !totalElement || !modalElement) {
+            console.error('Day detail modal elements not found');
+            return;
+        }
+        
+        titleElement.textContent = `${dateDisplay}の売上`;
         listContainer.innerHTML = '';
         
         let total = 0;
@@ -201,8 +210,8 @@ const Calendar = {
             total += sale.sellingPrice;
         });
         
-        document.getElementById('day-total-amount').textContent = `¥${total.toLocaleString()}`;
-        document.getElementById('day-detail-modal').style.display = 'flex';
+        totalElement.textContent = `¥${total.toLocaleString()}`;
+        modalElement.style.display = 'flex';
     },
 
     closeDayDetail() {
