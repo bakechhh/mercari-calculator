@@ -35,11 +35,38 @@ const Calendar = {
         // 月表示を更新
         document.getElementById('cal-current-month').textContent = this.formatYearMonth(this.currentYearMonth);
         
+        // 日別詳細モーダルが存在するか確認し、なければ作成
+        this.ensureDayDetailModal();
+        
         // カレンダーグリッドを生成
         this.renderCalendar();
         
         // サマリーを更新
         this.updateSummary();
+    },
+
+    ensureDayDetailModal() {
+        // モーダルが存在しない場合は作成
+        if (!document.getElementById('day-detail-modal')) {
+            const modal = document.createElement('div');
+            modal.id = 'day-detail-modal';
+            modal.className = 'modal';
+            modal.style.display = 'none';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <h3 id="day-detail-title">2024年1月1日の売上</h3>
+                    <div id="day-sales-list"></div>
+                    <div class="day-total">
+                        <span>合計：</span>
+                        <span id="day-total-amount">¥0</span>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="secondary-btn" onclick="Calendar.closeDayDetail()">閉じる</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
     },
 
     renderCalendar() {
@@ -215,7 +242,10 @@ const Calendar = {
     },
 
     closeDayDetail() {
-        document.getElementById('day-detail-modal').style.display = 'none';
+        const modal = document.getElementById('day-detail-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
 };
 
