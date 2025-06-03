@@ -455,11 +455,24 @@ select:focus {
 
 .modal-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 1rem;
     margin-top: 1.5rem;
 }
-
+/* 履歴詳細モーダルの場合は3つのボタン */
+.modal-actions button {
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+/* 2つのボタンの場合 */
+.modal-actions.two-buttons {
+    grid-template-columns: 1fr 1fr;
+}
 .calculated-price {
     background-color: var(--bg-secondary);
     padding: 0.75rem;
@@ -1091,7 +1104,14 @@ select:focus {
     .material-price {
         width: 100%;
     }
+    .modal-actions {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
     
+    .modal-actions.two-buttons {
+        grid-template-columns: 1fr;
+    }
     .custom-material-input {
         width: 100%;
     }
