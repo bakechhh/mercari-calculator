@@ -19,38 +19,48 @@ const Goals = {
         document.getElementById('edit-goal-btn').addEventListener('click', () => this.showGoalModal());
         
         // 目標フォーム
-        document.getElementById('goal-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveGoal();
-        });
+        const goalForm = document.getElementById('goal-form');
+        if (goalForm) {
+            goalForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveGoal();
+            });
+        }
 
         // 提案ボタン
         document.querySelectorAll('.suggestion-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.getElementById('goal-input').value = btn.dataset.amount;
+                const goalInput = document.getElementById('goal-input');
+                if (goalInput) {
+                    goalInput.value = btn.dataset.amount;
+                }
             });
         });
 
         // モーダル背景クリック
-        document.getElementById('goal-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'goal-modal') {
-                this.closeGoalModal();
-            }
-        });
+        const goalModal = document.getElementById('goal-modal');
+        if (goalModal) {
+            goalModal.addEventListener('click', (e) => {
+                if (e.target.id === 'goal-modal') {
+                    this.closeGoalModal();
+                }
+            });
+        }
         
-        // 閉じるボタン - DOMContentLoadedで確実に設定
-        document.addEventListener('DOMContentLoaded', () => {
-            const closeBtn = document.getElementById('close-goal-modal');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => this.closeGoalModal());
-            }
-        });
-        
-        // 既にDOMが読み込まれている場合の処理
+        // 閉じるボタン
         const closeBtn = document.getElementById('close-goal-modal');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.closeGoalModal());
         }
+        
+        // DOMが変更された時のために、後でも設定
+        setTimeout(() => {
+            const laterCloseBtn = document.getElementById('close-goal-modal');
+            if (laterCloseBtn && !laterCloseBtn.hasAttribute('data-listener-set')) {
+                laterCloseBtn.addEventListener('click', () => this.closeGoalModal());
+                laterCloseBtn.setAttribute('data-listener-set', 'true');
+            }
+        }, 100);
     },
 
     getCurrentYearMonth() {
@@ -355,7 +365,12 @@ const Goals = {
         const lastMonthSales = this.getMonthSales(lastMonthKey);
         const lastMonthAmount = lastMonthSales.reduce((sum, sale) => sum + sale.sellingPrice, 0);
         
-        document.getElementById('last-month-sales').textContent = `¥${lastMonthAmount.toLocaleString()}`;
+        const lastMonthElement = document.getElementById('last-month-sales');
+        if (lastMonthElement) {
+            lastMonthElement.textContent = `¥${lastMonthAmount.toLocaleString()}`;
+        } else {
+            console.warn('last-month-sales element not found');
+        }
     },
 
     initChart() {
