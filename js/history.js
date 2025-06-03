@@ -1,4 +1,4 @@
-// history.js - 履歴管理機能
+// history.js - 履歴管理機能（編集機能付き）
 const History = {
     currentFilter: 'all',
     searchQuery: '',
@@ -164,6 +164,7 @@ const History = {
                     </div>
                 </div>
                 <div class="modal-actions">
+                    <button class="primary-btn" onclick="History.editSale('${sale.id}')">編集</button>
                     <button class="danger-btn" onclick="History.deleteSale('${sale.id}')">削除</button>
                     <button class="secondary-btn" onclick="History.closeDetail()">閉じる</button>
                 </div>
@@ -179,6 +180,19 @@ const History = {
         document.body.appendChild(modal);
     },
 
+    editSale(id) {
+        // モーダルを閉じる
+        this.closeDetail();
+        
+        // 計算タブに切り替え
+        document.querySelector('[data-tab="calculator"]').click();
+        
+        // 計算機に編集データを読み込む
+        if (typeof Calculator !== 'undefined') {
+            Calculator.loadSaleForEdit(id);
+        }
+    },
+
     closeDetail() {
         const modal = document.querySelector('.modal');
         if (modal) {
@@ -191,9 +205,14 @@ const History = {
             Storage.deleteSale(id);
             this.closeDetail();
             this.renderHistory();
+            
+            // 目標データも更新
+            if (typeof Goals !== 'undefined') {
+                Goals.render();
+            }
         }
     }
 };
 
 // グローバルスコープに公開
-window.History = History
+window.History = History;
