@@ -8,8 +8,8 @@ const UserSync = {
     init() {
         // Supabase初期化
         this.supabase = window.supabase.createClient(
-            'https://YOUR_PROJECT_URL.supabase.co',
-            'YOUR_ANON_KEY'
+            'https://xooaanwzbkxgoforivvp.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhvb2Fhbnd6Ymt4Z29mb3JpdnZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwMzc1NTgsImV4cCI6MjA2NDYxMzU1OH0.TbOJMsOyNKMBXf1VFE9po7tTA_dwwiYBVoTO7V0BTxE'
         );
 
         // ユーザーID取得または生成
