@@ -100,22 +100,40 @@ const Calculator = {
     },
     
     async processOCR(file) {
-        // 画像を前処理
-        const processedImage = await this.preprocessImage(file);
+        // FormDataを作成
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('language', 'jpn'); // 日本語を指定
+        formData.append('isOverlayRequired', 'false');
+        formData.append('detectOrientation', 'true');
+        formData.append('scale', 'true');
+        formData.append('isTable', 'true'); // テーブル認識を有効化
         
-        // Tesseract.jsでOCR実行
-        const worker = await Tesseract.createWorker({
-            logger: m => console.log(m)
-        });
-        
-        await worker.loadLanguage('jpn');
-        await worker.initialize('jpn');
-        
-        const { data: { text } } = await worker.recognize(processedImage);
-        await worker.terminate();
-        
-        // テキストから情報を抽出
-        return this.extractInfo(text);
+        try {
+            const response = await fetch('https://api.ocr.space/parse/image', {
+                method: 'POST',
+                headers: {
+                    'apikey': 'K84699371988957' // ここに取得したAPIキーを入力
+                },
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.OCRExitCode !== 1) {
+                throw new Error(result.ErrorMessage || 'OCR処理に失敗しました');
+            }
+            
+            // OCR結果からテキストを抽出
+            const text = result.ParsedResults[0].ParsedText;
+            console.log('OCR結果:', text); // デバッグ用
+            
+            return this.extractInfo(text);
+            
+        } catch (error) {
+            console.error('OCR.space API Error:', error);
+            throw error;
+        }
     },
     
     async preprocessImage(file) {
@@ -164,36 +182,70 @@ const Calculator = {
             sellingPrice: 0
         };
         
-        // テキストを行に分割
-        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+        // OCR.spaceは改行が\r\nで来ることがある
+        const lines = text.split(/\r?\n/).map(line => line.trim()).filter(line => line);
         
-        // 商品名の抽出（取引画面の最初の行または「取引画面」の次の行）
-        const titleIndex = lines.findIndex(line => line.includes('取引画面'));
-        if (titleIndex !== -1 && titleIndex < lines.length - 1) {
-            // 「取引画面」の次の行を商品名とする
-            result.productName = lines[titleIndex + 1];
-        } else {
-            // 最初の実質的な行を商品名とする（短すぎる行は除外）
-            const productLine = lines.find(line => line.length > 5 && !line.includes('¥'));
-            if (productLine) {
-                result.productName = productLine;
+        console.log('認識された行:', lines); // デバッグ用
+        
+        // 商品名の抽出
+        // 「取引画面」の後の実質的な内容を商品名とする
+        let foundTitle = false;
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes('取引画面')) {
+                foundTitle = true;
+                continue;
+            }
+            
+            // 取引画面の後で、かつ金額や定型文でない行を商品名とする
+            if (foundTitle && 
+                lines[i].length > 3 && 
+                !lines[i].includes('¥') &&
+                !lines[i].includes('円') &&
+                !lines[i].includes('商品代金') &&
+                !lines[i].includes('販売手数料') &&
+                !lines[i].includes('※')) {
+                result.productName = lines[i];
+                break;
             }
         }
         
-        // 商品代金の抽出
-        const pricePattern = /商品代金[:\s]*¥([0-9,]+)/;
-        const priceMatch = text.match(pricePattern);
+        // 商品名が見つからない場合は、最初の実質的な行を使用
+        if (!result.productName) {
+            const titleLine = lines.find(line => 
+                line.length > 5 && 
+                !line.includes('¥') && 
+                !line.includes('取引') &&
+                !line.match(/^\d{2}:\d{2}/) // 時刻ではない
+            );
+            if (titleLine) {
+                result.productName = titleLine;
+            }
+        }
         
-        if (priceMatch) {
-            result.sellingPrice = parseInt(priceMatch[1].replace(/,/g, ''));
-        } else {
-            // 「商品代金」というテキストが見つからない場合、¥マークの後の数字を探す
-            const yenPattern = /¥([0-9,]+)/g;
-            const yenMatches = [...text.matchAll(yenPattern)];
+        // 商品代金の抽出（より柔軟なパターン）
+        const pricePatterns = [
+            /商品代金[\s:：]*¥\s*([0-9,]+)/,
+            /商品代金[\s:：]*([0-9,]+)\s*円/,
+            /¥\s*([0-9,]+)[\s]*\n[\s]*販売手数料/, // 商品代金の行
+            /^¥\s*([0-9,]+)$/m // 独立した金額行
+        ];
+        
+        for (const pattern of pricePatterns) {
+            const match = text.match(pattern);
+            if (match) {
+                result.sellingPrice = parseInt(match[1].replace(/,/g, ''));
+                break;
+            }
+        }
+        
+        // 金額が見つからない場合、最も大きい金額を商品代金とする
+        if (!result.sellingPrice) {
+            const allPrices = [...text.matchAll(/¥\s*([0-9,]+)/g)]
+                .map(m => parseInt(m[1].replace(/,/g, '')))
+                .filter(p => p > 100); // 100円以上の金額のみ
             
-            // 最初に見つかった金額を商品代金とする（通常最も大きい金額）
-            if (yenMatches.length > 0) {
-                result.sellingPrice = parseInt(yenMatches[0][1].replace(/,/g, ''));
+            if (allPrices.length > 0) {
+                result.sellingPrice = Math.max(...allPrices);
             }
         }
         
