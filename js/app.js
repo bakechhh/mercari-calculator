@@ -15,6 +15,7 @@ const App = {
         Export.init();
         Goals.init();
         Calendar.init();
+        UserSync.init();
         
         // アニメーション用CSS追加
         this.addAnimations();
