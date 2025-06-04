@@ -2,7 +2,7 @@
   "name": "メルカリ売却管理",
   "short_name": "メルカリ管理",
   "description": "メルカリでの売却における実質手取りを計算・管理するツール",
-  "start_url": "/mercari-calculator/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ff0211",
@@ -20,7 +20,5 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "categories": ["productivity", "utilities"],
-  "lang": "ja"
+  ]
 }
