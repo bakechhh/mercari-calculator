@@ -170,5 +170,11 @@ const App = {
 
 // DOMContentLoaded後に初期化
 document.addEventListener('DOMContentLoaded', () => {
-    App.init();
+    // Supabaseの読み込みを待つ
+    const checkSupabase = setInterval(() => {
+        if (window.supabase) {
+            clearInterval(checkSupabase);
+            App.init();
+        }
+    }, 100);
 });
