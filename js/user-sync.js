@@ -6,10 +6,17 @@ const UserSync = {
     lastSyncTime: null,
 
     init() {
-        // Supabase初期化
-        this.supabase = window.supabase.createClient(
+        // Supabaseが読み込まれているか確認
+        if (!window.supabase) {
+            console.error('Supabase not loaded');
+            return;
+        }
+        
+        // Supabase初期化（修正版）
+        const { createClient } = window.supabase;
+        this.supabase = createClient(
             'https://xooaanwzbkxgoforivvp.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhvb2Fhbnd6Ymt4Z29mb3JpdnZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwMzc1NTgsImV4cCI6MjA2NDYxMzU1OH0.TbOJMsOyNKMBXf1VFE9po7tTA_dwwiYBVoTO7V0BTxE'
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhvb2Fhbnd6Ymt4Z29mb3JpdnZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwMzc1NTgsImV4cCI6MjA2NDYxMzU1OH0.TbOJMsOyNKMBXf1VFE9po7tTA_dwwiYBVoTO7V0BTxE' // ← ここに実際のキーを入れる
         );
 
         // ユーザーID取得または生成
@@ -18,7 +25,10 @@ const UserSync = {
 
         // 自動同期設定の復元
         this.autoSyncEnabled = localStorage.getItem('auto_sync') === 'true';
-        document.getElementById('auto-sync-toggle').checked = this.autoSyncEnabled;
+        const autoSyncToggle = document.getElementById('auto-sync-toggle');
+        if (autoSyncToggle) {
+            autoSyncToggle.checked = this.autoSyncEnabled;
+        }
 
         // イベントリスナー設定
         this.setupEventListeners();
@@ -49,8 +59,11 @@ const UserSync = {
     },
 
     displayUserId() {
-        document.getElementById('user-id-display').textContent = `ID: ${this.userId}`;
-        document.getElementById('current-user-id').value = this.userId;
+        const display = document.getElementById('user-id-display');
+        const input = document.getElementById('current-user-id');
+        
+        if (display) display.textContent = `ID: ${this.userId}`;
+        if (input) input.value = this.userId;
     },
 
     setupEventListeners() {
@@ -222,6 +235,11 @@ const UserSync = {
         const statusText = document.getElementById('sync-status-text');
         const statusEl = document.getElementById('sync-status');
         const lastSyncEl = document.getElementById('last-sync-time');
+
+        if (!statusText || !statusEl || !lastSyncEl) {
+            console.error('Sync status elements not found');
+            return;
+        }
         
         if (status) {
             statusText.textContent = status;
