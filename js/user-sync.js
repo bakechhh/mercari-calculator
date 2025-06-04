@@ -115,16 +115,19 @@ const UserSync = {
             
             const data = Storage.exportData();
             
+            // upsertを使用（insertOrUpdateの意味）
             const { error } = await this.supabase
                 .from('user_data')
                 .upsert({
                     user_id: this.userId,
                     data: data,
                     updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'user_id'  // user_idが重複したら更新
                 });
-
+    
             if (error) throw error;
-
+    
             this.lastSyncTime = new Date();
             localStorage.setItem('last_sync', this.lastSyncTime.toISOString());
             this.updateSyncStatus('同期完了', true);
