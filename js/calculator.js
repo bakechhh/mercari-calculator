@@ -5,6 +5,7 @@ const Calculator = {
     init() {
         this.form = document.getElementById('calc-form');
         this.setupEventListeners();
+        this.setupOCR(); // この行を追加
         this.loadDefaults();
         this.addMaterialRow(); // 初期材料行
         this.updateMaterialSelects();
@@ -47,6 +48,156 @@ const Calculator = {
                 this.removeMaterialRow(e.target);
             }
         });
+    },
+
+    setupOCR() {
+        const ocrBtn = document.getElementById('ocr-scan-btn');
+        const fileInput = document.getElementById('ocr-file-input');
+        
+        if (!ocrBtn || !fileInput) return; // 要素が存在しない場合は終了
+        
+        ocrBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // ローディング表示
+            const loadingDiv = document.getElementById('ocr-loading');
+            if (loadingDiv) loadingDiv.style.display = 'block';
+            ocrBtn.disabled = true;
+            
+            try {
+                const result = await this.processOCR(file);
+                
+                if (result.productName) {
+                    document.getElementById('product-name').value = result.productName;
+                }
+                
+                if (result.sellingPrice) {
+                    document.getElementById('selling-price').value = result.sellingPrice;
+                    this.calculate(); // 自動計算実行
+                }
+                
+                // 成功通知
+                this.showNotification(
+                    result.productName && result.sellingPrice ? 
+                    '読み込み完了！' : 
+                    '一部の項目を読み込みました'
+                );
+                
+            } catch (error) {
+                console.error('OCR Error:', error);
+                this.showNotification('読み込みに失敗しました', 'error');
+            } finally {
+                if (loadingDiv) loadingDiv.style.display = 'none';
+                ocrBtn.disabled = false;
+                fileInput.value = ''; // ファイル選択をリセット
+            }
+        });
+    },
+    
+    async processOCR(file) {
+        // 画像を前処理
+        const processedImage = await this.preprocessImage(file);
+        
+        // Tesseract.jsでOCR実行
+        const worker = await Tesseract.createWorker({
+            logger: m => console.log(m)
+        });
+        
+        await worker.loadLanguage('jpn');
+        await worker.initialize('jpn');
+        
+        const { data: { text } } = await worker.recognize(processedImage);
+        await worker.terminate();
+        
+        // テキストから情報を抽出
+        return this.extractInfo(text);
+    },
+    
+    async preprocessImage(file) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            img.onload = () => {
+                // キャンバスサイズ設定（大きすぎる画像は縮小）
+                const maxWidth = 1200;
+                const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                
+                // 画像描画
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // コントラスト強調
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    // グレースケール化
+                    const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+                    
+                    // コントラスト強調
+                    const enhanced = (gray - 128) * 1.5 + 128;
+                    
+                    data[i] = enhanced;
+                    data[i + 1] = enhanced;
+                    data[i + 2] = enhanced;
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                canvas.toBlob(resolve, 'image/png');
+            };
+            
+            img.src = URL.createObjectURL(file);
+        });
+    },
+    
+    extractInfo(text) {
+        const result = {
+            productName: '',
+            sellingPrice: 0
+        };
+        
+        // テキストを行に分割
+        const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+        
+        // 商品名の抽出（取引画面の最初の行または「取引画面」の次の行）
+        const titleIndex = lines.findIndex(line => line.includes('取引画面'));
+        if (titleIndex !== -1 && titleIndex < lines.length - 1) {
+            // 「取引画面」の次の行を商品名とする
+            result.productName = lines[titleIndex + 1];
+        } else {
+            // 最初の実質的な行を商品名とする（短すぎる行は除外）
+            const productLine = lines.find(line => line.length > 5 && !line.includes('¥'));
+            if (productLine) {
+                result.productName = productLine;
+            }
+        }
+        
+        // 商品代金の抽出
+        const pricePattern = /商品代金[:\s]*¥([0-9,]+)/;
+        const priceMatch = text.match(pricePattern);
+        
+        if (priceMatch) {
+            result.sellingPrice = parseInt(priceMatch[1].replace(/,/g, ''));
+        } else {
+            // 「商品代金」というテキストが見つからない場合、¥マークの後の数字を探す
+            const yenPattern = /¥([0-9,]+)/g;
+            const yenMatches = [...text.matchAll(yenPattern)];
+            
+            // 最初に見つかった金額を商品代金とする（通常最も大きい金額）
+            if (yenMatches.length > 0) {
+                result.sellingPrice = parseInt(yenMatches[0][1].replace(/,/g, ''));
+            }
+        }
+        
+        return result;
     },
 
     loadDefaults() {
@@ -488,14 +639,14 @@ const Calculator = {
         this.showNotification('保存しました！');
     },
 
-    showNotification(message) {
+    showNotification(message, type = 'success') {
         const notification = document.createElement('div');
         notification.style.cssText = `
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: var(--success-color);
+            background-color: ${type === 'error' ? 'var(--danger-color)' : 'var(--success-color)'};
             color: white;
             padding: 1rem 2rem;
             border-radius: var(--border-radius);
