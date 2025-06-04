@@ -55,11 +55,18 @@ const UserSync = {
 
     setupEventListeners() {
         // 同期ボタン
-        document.getElementById('sync-status-btn').addEventListener('click', () => {
-            document.getElementById('sync-modal').style.display = 'flex';
-            this.updateSyncStatus();
-        });
-
+        const syncBtn = document.getElementById('sync-status-btn');
+        const syncModal = document.getElementById('sync-modal');
+        
+        if (syncBtn && syncModal) {
+            syncBtn.addEventListener('click', () => {
+                syncModal.style.display = 'flex';
+                this.updateSyncStatus();
+            });
+        } else {
+            console.error('Sync button or modal not found');
+        }
+        
         // データ変更の監視（自動同期用）
         if (this.autoSyncEnabled) {
             this.enableDataWatchers();
