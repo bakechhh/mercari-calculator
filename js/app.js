@@ -15,7 +15,13 @@ const App = {
         Export.init();
         Goals.init();
         Calendar.init();
-        UserSync.init();
+        
+        // UserSyncの初期化を追加
+        if (typeof UserSync !== 'undefined') {
+            UserSync.init();
+        } else {
+            console.error('UserSync not loaded');
+        }
         
         // アニメーション用CSS追加
         this.addAnimations();
