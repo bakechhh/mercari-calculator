@@ -100,8 +100,7 @@ const App = {
     async registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             try {
-                // リポジトリ名を含むパスに修正
-                const registration = await navigator.serviceWorker.register('/mercari-calculator/sw.js');
+                const registration = await navigator.serviceWorker.register('/sw.js');
                 console.log('ServiceWorker registered:', registration);
             } catch (error) {
                 console.log('ServiceWorker registration failed:', error);
