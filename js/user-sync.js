@@ -12,11 +12,17 @@ const UserSync = {
             return;
         }
         
-        // Supabase初期化（修正版）
+        // 環境変数が読み込まれているか確認
+        if (!window.ENV || !window.ENV.SUPABASE_URL || !window.ENV.SUPABASE_ANON_KEY) {
+            console.error('Environment variables not loaded');
+            return;
+        }
+        
+        // Supabase初期化（環境変数使用）
         const { createClient } = window.supabase;
         this.supabase = createClient(
-            'https://xooaanwzbkxgoforivvp.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhvb2Fhbnd6Ymt4Z29mb3JpdnZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwMzc1NTgsImV4cCI6MjA2NDYxMzU1OH0.TbOJMsOyNKMBXf1VFE9po7tTA_dwwiYBVoTO7V0BTxE' // ← ここに実際のキーを入れる
+            window.ENV.SUPABASE_URL,
+            window.ENV.SUPABASE_ANON_KEY
         );
 
         // ユーザーID取得または生成
