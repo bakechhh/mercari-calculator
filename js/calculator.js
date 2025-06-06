@@ -53,15 +53,13 @@ const Calculator = {
     setDefaultDate() {
         const dateInput = document.getElementById('sale-date');
         if (dateInput && !this.editingId) {
-            // 現在の日時を設定（ローカルタイムゾーン）
+            // 現在の日付を設定
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
             
-            dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+            dateInput.value = `${year}-${month}-${day}`;
         }
     },
 
@@ -270,10 +268,8 @@ const Calculator = {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
             
-            dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+            dateInput.value = `${year}-${month}-${day}`;
         }
 
         // 材料データを読み込み

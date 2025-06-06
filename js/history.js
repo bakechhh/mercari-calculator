@@ -93,7 +93,7 @@ const History = {
         
         container.innerHTML = filteredSales.map(sale => {
             const date = new Date(sale.date);
-            const dateStr = `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+            const dateStr = `${date.getMonth() + 1}/${date.getDate()}`;
             
             return `
                 <div class="history-item" onclick="History.showDetail('${sale.id}')">
