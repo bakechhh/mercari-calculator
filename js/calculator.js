@@ -8,6 +8,7 @@ const Calculator = {
         this.loadDefaults();
         this.addMaterialRow(); // 初期材料行
         this.updateMaterialSelects();
+        this.setDefaultDate(); // 初期日付設定
     },
 
     setupEventListeners() {
@@ -49,6 +50,20 @@ const Calculator = {
         });
     },
 
+    setDefaultDate() {
+        const dateInput = document.getElementById('sale-date');
+        if (dateInput && !this.editingId) {
+            // 現在の日時を設定（ローカルタイムゾーン）
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+    },
 
     loadDefaults() {
         const settings = Storage.getSettings();
@@ -248,6 +263,19 @@ const Calculator = {
         document.getElementById('indirect-costs').value = sale.indirectCosts || 0;
         document.getElementById('commission-rate').value = sale.commissionRate;
 
+        // 日付を設定
+        const dateInput = document.getElementById('sale-date');
+        if (dateInput && sale.date) {
+            const date = new Date(sale.date);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
         // 材料データを読み込み
         this.loadMaterialsData(sale.materials);
         
@@ -341,6 +369,7 @@ const Calculator = {
         // フォームリセット
         this.form.reset();
         this.loadDefaults();
+        this.setDefaultDate(); // 日付も現在に戻す
         
         // 材料入力をリセット
         const container = document.getElementById('material-inputs');
@@ -366,6 +395,10 @@ const Calculator = {
         const indirectCosts = parseFloat(document.getElementById('indirect-costs').value) || 0;
         const commissionRate = parseFloat(document.getElementById('commission-rate').value) || 0;
         
+        // 日付を取得
+        const saleDateInput = document.getElementById('sale-date');
+        const saleDate = saleDateInput ? new Date(saleDateInput.value).toISOString() : new Date().toISOString();
+        
         const materials = this.getMaterialsData();
         const materialCost = materials.reduce((sum, m) => sum + m.totalPrice, 0);
         const commission = Math.floor(sellingPrice * (commissionRate / 100));
@@ -383,7 +416,8 @@ const Calculator = {
             commissionRate,
             commission,
             netIncome,
-            profitRate: parseFloat(profitRate)
+            profitRate: parseFloat(profitRate),
+            date: saleDate // 日付を更新
         };
         
         Storage.updateSale(this.editingId, updatedSale);
@@ -394,6 +428,7 @@ const Calculator = {
         // フォームリセット
         this.form.reset();
         this.loadDefaults();
+        this.setDefaultDate();
         
         // 材料入力をリセット
         const container = document.getElementById('material-inputs');
@@ -428,6 +463,10 @@ const Calculator = {
         const indirectCosts = parseFloat(document.getElementById('indirect-costs').value) || 0;
         const commissionRate = parseFloat(document.getElementById('commission-rate').value) || 0;
         
+        // 日付を取得
+        const saleDateInput = document.getElementById('sale-date');
+        const saleDate = saleDateInput ? new Date(saleDateInput.value).toISOString() : new Date().toISOString();
+        
         const materials = this.getMaterialsData();
         const materialCost = materials.reduce((sum, m) => sum + m.totalPrice, 0);
         const commission = Math.floor(sellingPrice * (commissionRate / 100));
@@ -445,7 +484,8 @@ const Calculator = {
             commissionRate,
             commission,
             netIncome,
-            profitRate: parseFloat(profitRate)
+            profitRate: parseFloat(profitRate),
+            date: saleDate // カスタム日付を使用
         };
         
         Storage.saveSale(sale);
@@ -455,19 +495,19 @@ const Calculator = {
             Effects.showSaveEffect(sale.sellingPrice);
         }
         
-        // 目標データを更新
+        // 目標データを更新（売却日の年月に基づいて）
         if (typeof Goals !== 'undefined') {
-            const currentYearMonth = new Date().toISOString().slice(0, 7);
-            const goal = Storage.getGoal(currentYearMonth);
+            const saleYearMonth = saleDate.slice(0, 7);
+            const goal = Storage.getGoal(saleYearMonth);
             
             // 売上データを再取得して正確に計算
             const allSales = Storage.getSales();
-            const monthSales = allSales.filter(s => s.date.startsWith(currentYearMonth));
+            const monthSales = allSales.filter(s => s.date.startsWith(saleYearMonth));
             
             goal.currentAmount = monthSales.reduce((sum, s) => sum + s.sellingPrice, 0);
             goal.salesCount = monthSales.length;
             
-            Storage.saveGoal(currentYearMonth, goal);
+            Storage.saveGoal(saleYearMonth, goal);
             
             // 記録も即座に更新
             Goals.updateRecords();
@@ -476,6 +516,7 @@ const Calculator = {
         // フォームリセット
         this.form.reset();
         this.loadDefaults();
+        this.setDefaultDate();
         
         // 材料入力をリセット
         const container = document.getElementById('material-inputs');
@@ -485,7 +526,7 @@ const Calculator = {
         // 履歴タブに切り替え
         document.querySelector('[data-tab="history"]').click();
         
-        // 成功メッセージ（簡易的な通知）
+        // 成功メッセージ
         this.showNotification('保存しました！');
     },
 

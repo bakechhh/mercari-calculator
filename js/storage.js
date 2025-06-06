@@ -17,8 +17,13 @@ const Storage = {
     saveSale(sale) {
         const sales = this.getSales();
         sale.id = Date.now().toString();
-        sale.date = new Date().toISOString();
+        // dateが既に設定されていない場合のみ現在時刻を設定
+        if (!sale.date) {
+            sale.date = new Date().toISOString();
+        }
         sales.unshift(sale);
+        // 日付順にソート（新しい順）
+        sales.sort((a, b) => new Date(b.date) - new Date(a.date));
         localStorage.setItem(this.KEYS.SALES, JSON.stringify(sales));
         return sale;
     },
@@ -27,13 +32,15 @@ const Storage = {
         const sales = this.getSales();
         const index = sales.findIndex(s => s.id === id);
         if (index !== -1) {
-            // 元の日付とIDは保持する
+            // 元のIDは保持し、日付は更新データに含まれていればそれを使用
             sales[index] = { 
                 ...sales[index], 
                 ...updatedSale,
                 id: sales[index].id,
-                date: sales[index].date
+                date: updatedSale.date || sales[index].date
             };
+            // 日付順にソート（新しい順）
+            sales.sort((a, b) => new Date(b.date) - new Date(a.date));
             localStorage.setItem(this.KEYS.SALES, JSON.stringify(sales));
             return sales[index];
         }
@@ -119,6 +126,8 @@ const Storage = {
     importData(data) {
         try {
             if (data.sales) {
+                // インポート時に日付順にソート
+                data.sales.sort((a, b) => new Date(b.date) - new Date(a.date));
                 localStorage.setItem(this.KEYS.SALES, JSON.stringify(data.sales));
             }
             if (data.materials) {
