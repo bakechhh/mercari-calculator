@@ -1230,3 +1230,133 @@ select:focus {
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
+/* 同期ボタンの強調 */
+#sync-status-btn {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+#sync-status-btn:hover {
+    transform: scale(1.1);
+}
+
+/* 同期インジケーター */
+.sync-indicator {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #ff9800;
+    display: none;
+    animation: pulse 2s infinite;
+}
+
+.sync-indicator.show {
+    display: block;
+}
+
+/* 手動同期の推奨表示 */
+.sync-reminder {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    background-color: var(--accent-color);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 900;
+}
+
+.sync-reminder:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.sync-reminder-text {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.sync-reminder-time {
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+/* 同期設定の説明 */
+.sync-info-box {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.sync-info-box h4 {
+    margin-bottom: 0.5rem;
+    color: var(--accent-color);
+}
+
+.sync-info-box ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sync-info-box li {
+    padding: 0.25rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.sync-info-box li:before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--success-color);
+}
+
+/* オフライン表示 */
+.offline-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #ff9800;
+    color: white;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    z-index: 9999;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+
+.offline-banner.show {
+    transform: translateY(0);
+}
+
+/* 同期モーダルの改善 */
+#sync-modal .modal-content {
+    max-width: 600px;
+}
+
+.sync-strategy-info {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 1rem;
+    margin: 1rem 0;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+[data-theme="dark"] .sync-strategy-info {
+    background-color: rgba(33, 150, 243, 0.1);
+}
+
+.sync-strategy-info h5 {
+    margin-bottom: 0.5rem;
+    color: #2196f3;
+}

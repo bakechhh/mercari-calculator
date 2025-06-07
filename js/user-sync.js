@@ -4,8 +4,34 @@ const UserSync = {
     autoSyncEnabled: false,
     syncTimeout: null,
     lastSyncTime: null,
+    syncQueue: [],
+    isOnline: navigator.onLine,
+    syncRetryCount: 0,
+    maxRetries: 3,
+    changeCount: 0,  // 変更カウンター
+    lastDataHash: null,  // データのハッシュ値
+    syncInterval: null,  // 定期同期のインターバル
 
     init() {
+        // オンライン状態の監視
+        window.addEventListener('online', () => {
+            this.isOnline = true;
+            this.processSyncQueue();
+        });
+        
+        window.addEventListener('offline', () => {
+            this.isOnline = false;
+        });
+
+        // Service Workerからのメッセージ受信
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data.type === 'SYNC_REQUIRED') {
+                    this.syncToCloud();
+                }
+            });
+        }
+
         // Supabaseが読み込まれているか確認
         if (!window.supabase) {
             console.error('Supabase not loaded');
@@ -18,19 +44,29 @@ const UserSync = {
             return;
         }
         
-        // Supabase初期化（環境変数使用）
+        // Supabase初期化
         const { createClient } = window.supabase;
         this.supabase = createClient(
             window.ENV.SUPABASE_URL,
-            window.ENV.SUPABASE_ANON_KEY
+            window.ENV.SUPABASE_ANON_KEY,
+            {
+                auth: {
+                    persistSession: false  // セッション管理を無効化（認証不要のため）
+                },
+                realtime: {
+                    params: {
+                        eventsPerSecond: 2
+                    }
+                }
+            }
         );
 
         // ユーザーID取得または生成
         this.userId = this.getUserId();
         this.displayUserId();
 
-        // 自動同期設定の復元
-        this.autoSyncEnabled = localStorage.getItem('auto_sync') === 'true';
+        // 自動同期設定の復元（デフォルトでON）
+        this.autoSyncEnabled = localStorage.getItem('auto_sync') !== 'false';
         const autoSyncToggle = document.getElementById('auto-sync-toggle');
         if (autoSyncToggle) {
             autoSyncToggle.checked = this.autoSyncEnabled;
@@ -41,14 +77,30 @@ const UserSync = {
 
         // 初回同期
         if (this.autoSyncEnabled) {
-            this.syncFromCloud();
+            this.syncFromCloud().then(() => {
+                // リアルタイム同期の設定
+                this.setupRealtimeSync();
+            });
         }
+
+        // ページ終了時の同期
+        window.addEventListener('beforeunload', () => {
+            if (this.syncQueue.length > 0) {
+                this.forceSyncToCloud();
+            }
+        });
+
+        // 定期的な同期（30分ごと）
+        setInterval(() => {
+            if (this.autoSyncEnabled && this.isOnline) {
+                this.syncToCloud();
+            }
+        }, 30 * 60 * 1000);
     },
 
     getUserId() {
         let userId = localStorage.getItem('user_id');
         if (!userId) {
-            // 6文字のランダムID生成
             userId = this.generateUserId();
             localStorage.setItem('user_id', userId);
         }
@@ -82,11 +134,9 @@ const UserSync = {
                 syncModal.style.display = 'flex';
                 this.updateSyncStatus();
             });
-        } else {
-            console.error('Sync button or modal not found');
         }
         
-        // データ変更の監視（自動同期用）
+        // データ変更の監視
         if (this.autoSyncEnabled) {
             this.enableDataWatchers();
         }
@@ -94,7 +144,7 @@ const UserSync = {
 
     enableDataWatchers() {
         // Storage の各保存メソッドをラップ
-        const methods = ['saveSale', 'saveMaterial', 'saveGoal', 'saveSettings'];
+        const methods = ['saveSale', 'updateSale', 'deleteSale', 'saveMaterial', 'updateMaterial', 'deleteMaterial', 'saveGoal', 'saveSettings'];
         
         methods.forEach(method => {
             const original = Storage[method];
@@ -106,42 +156,114 @@ const UserSync = {
         });
     },
 
+    setupRealtimeSync() {
+        // Realtimeは無効化（リクエスト削減のため）
+        // 代わりに手動同期とタブ間通信を使用
+        
+        // タブ間通信でローカル同期
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'sync_trigger' && e.newValue) {
+                const trigger = JSON.parse(e.newValue);
+                if (trigger.userId === this.userId && trigger.timestamp > Date.now() - 5000) {
+                    this.refreshUI();
+                }
+            }
+        });
+    },
+
     scheduleSync() {
         if (!this.autoSyncEnabled) return;
 
+        this.changeCount++;
+        
         clearTimeout(this.syncTimeout);
+        
+        // 変更数に応じて同期タイミングを調整
+        let delay;
+        if (this.changeCount >= 10) {
+            delay = 5000;  // 5秒後（大量変更時）
+        } else if (this.changeCount >= 5) {
+            delay = 15000; // 15秒後（中程度の変更）
+        } else {
+            delay = 30000; // 30秒後（少量の変更）
+        }
+        
         this.syncTimeout = setTimeout(() => {
             this.syncToCloud();
-        }, 3000); // 3秒後に同期
+        }, delay);
     },
 
     async syncToCloud() {
+        if (!this.isOnline) {
+            this.addToSyncQueue('sync');
+            return;
+        }
+
         try {
+            // データが変更されていない場合はスキップ
+            const currentData = Storage.exportData();
+            const currentHash = this.generateHash(JSON.stringify(currentData));
+            
+            if (currentHash === this.lastDataHash) {
+                console.log('No changes detected, skipping sync');
+                this.changeCount = 0;
+                return;
+            }
+
             this.updateSyncStatus('同期中...');
+            const syncBtn = document.getElementById('sync-status-btn');
+            if (syncBtn) syncBtn.classList.add('syncing');
             
-            const data = Storage.exportData();
+            const timestamp = new Date().toISOString();
             
-            // upsertを使用（insertOrUpdateの意味）
             const { error } = await this.supabase
                 .from('user_data')
                 .upsert({
                     user_id: this.userId,
-                    data: data,
-                    updated_at: new Date().toISOString()
+                    data: currentData,
+                    updated_at: timestamp,
+                    device_id: this.getDeviceId(),
+                    sync_version: (currentData.sync_version || 0) + 1
                 }, {
-                    onConflict: 'user_id'  // user_idが重複したら更新
+                    onConflict: 'user_id'
                 });
     
             if (error) throw error;
     
-            this.lastSyncTime = new Date();
-            localStorage.setItem('last_sync', this.lastSyncTime.toISOString());
+            this.lastSyncTime = new Date(timestamp);
+            this.lastDataHash = currentHash;
+            this.changeCount = 0;
+            localStorage.setItem('last_sync', timestamp);
+            localStorage.setItem('last_data_hash', currentHash);
+            this.syncRetryCount = 0;
             this.updateSyncStatus('同期完了', true);
+            
+            // タブ間通信で他のタブに通知
+            localStorage.setItem('sync_trigger', JSON.stringify({
+                userId: this.userId,
+                timestamp: Date.now()
+            }));
+            
+            if (syncBtn) syncBtn.classList.remove('syncing');
             
             return true;
         } catch (error) {
             console.error('Sync error:', error);
-            this.updateSyncStatus('同期エラー', false);
+            const syncBtn = document.getElementById('sync-status-btn');
+            if (syncBtn) {
+                syncBtn.classList.remove('syncing');
+                syncBtn.classList.add('error');
+            }
+            
+            // リトライ
+            if (this.syncRetryCount < this.maxRetries) {
+                this.syncRetryCount++;
+                setTimeout(() => this.syncToCloud(), 2000 * this.syncRetryCount);
+            } else {
+                this.updateSyncStatus('同期エラー', false);
+                this.syncRetryCount = 0;
+            }
+            
             throw error;
         }
     },
@@ -166,15 +288,16 @@ const UserSync = {
             }
 
             if (data && data.data) {
-                Storage.importData(data.data);
+                // ローカルデータとマージ（競合解決）
+                const localData = Storage.exportData();
+                const mergedData = this.mergeData(localData, data.data);
+                
+                Storage.importData(mergedData);
                 this.lastSyncTime = new Date(data.updated_at);
                 this.updateSyncStatus('同期完了', true);
                 
                 // UIを更新
-                if (typeof History !== 'undefined') History.renderHistory();
-                if (typeof Materials !== 'undefined') Materials.renderMaterialsList();
-                if (typeof Calculator !== 'undefined') Calculator.updateMaterialSelects();
-                if (typeof Goals !== 'undefined') Goals.render();
+                this.refreshUI();
             }
 
             return true;
@@ -182,6 +305,122 @@ const UserSync = {
             console.error('Sync error:', error);
             this.updateSyncStatus('同期エラー', false);
             throw error;
+        }
+    },
+
+    mergeData(localData, remoteData) {
+        // シンプルなマージ戦略：より新しいデータを優先
+        const merged = { ...remoteData };
+        
+        // 売上データのマージ（IDベースで重複を避ける）
+        if (localData.sales && remoteData.sales) {
+            const salesMap = new Map();
+            
+            // リモートデータを先に追加
+            remoteData.sales.forEach(sale => salesMap.set(sale.id, sale));
+            
+            // ローカルデータで上書き（より新しい場合）
+            localData.sales.forEach(sale => {
+                const existing = salesMap.get(sale.id);
+                if (!existing || new Date(sale.date) > new Date(existing.date)) {
+                    salesMap.set(sale.id, sale);
+                }
+            });
+            
+            merged.sales = Array.from(salesMap.values())
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+        
+        // 材料データも同様にマージ
+        if (localData.materials && remoteData.materials) {
+            const materialsMap = new Map();
+            remoteData.materials.forEach(m => materialsMap.set(m.id, m));
+            localData.materials.forEach(m => materialsMap.set(m.id, m));
+            merged.materials = Array.from(materialsMap.values());
+        }
+        
+        // 目標データのマージ
+        if (localData.goals && remoteData.goals) {
+            merged.goals = { ...remoteData.goals, ...localData.goals };
+        }
+        
+        return merged;
+    },
+
+    getDeviceId() {
+        let deviceId = localStorage.getItem('device_id');
+        if (!deviceId) {
+            deviceId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem('device_id', deviceId);
+        }
+        return deviceId;
+    },
+
+    forceSyncToCloud() {
+        // 同期的に送信（ページ終了時用）
+        const data = Storage.exportData();
+        const timestamp = new Date().toISOString();
+        
+        // Beacon APIを使用して確実に送信
+        if (navigator.sendBeacon) {
+            const blob = new Blob([JSON.stringify({
+                user_id: this.userId,
+                data: data,
+                updated_at: timestamp
+            })], { type: 'application/json' });
+            
+            navigator.sendBeacon(
+                `${window.ENV.SUPABASE_URL}/rest/v1/user_data?user_id=eq.${this.userId}`,
+                blob
+            );
+        }
+    },
+
+    addToSyncQueue(action) {
+        this.syncQueue.push({
+            action,
+            timestamp: new Date().toISOString(),
+            data: Storage.exportData()
+        });
+        
+        // オンラインになったら処理
+        if (this.isOnline) {
+            this.processSyncQueue();
+        }
+    },
+
+    async processSyncQueue() {
+        while (this.syncQueue.length > 0 && this.isOnline) {
+            const item = this.syncQueue.shift();
+            try {
+                await this.syncToCloud();
+            } catch (error) {
+                // 失敗したら戻す
+                this.syncQueue.unshift(item);
+                break;
+            }
+        }
+    },
+
+    generateHash(str) {
+        // 簡易的なハッシュ生成（変更検知用）
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return hash.toString(36);
+    },
+
+    toggleAutoSync(enabled) {
+        this.autoSyncEnabled = enabled;
+        localStorage.setItem('auto_sync', enabled ? 'true' : 'false');
+        
+        if (enabled) {
+            this.enableDataWatchers();
+            this.syncToCloud();
+            // Realtimeは使用しない（リクエスト削減）
         }
     },
 
@@ -195,6 +434,10 @@ const UserSync = {
 
         if (confirm(`ID: ${newId} でログインしますか？\n現在のデータは上書きされます。`)) {
             try {
+                // 現在のデータをバックアップ
+                const backup = Storage.exportData();
+                localStorage.setItem('backup_data', JSON.stringify(backup));
+                
                 localStorage.setItem('user_id', newId);
                 this.userId = newId;
                 this.displayUserId();
@@ -204,10 +447,23 @@ const UserSync = {
                 alert('ログインしました！');
                 this.closeModal();
                 
+                // Service Workerのキャッシュを更新
+                if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'UPDATE_CACHE'
+                    });
+                }
+                
                 // ページをリロード
                 location.reload();
             } catch (error) {
                 alert('データの取得に失敗しました。IDを確認してください。');
+                // バックアップから復元
+                const backup = localStorage.getItem('backup_data');
+                if (backup) {
+                    Storage.importData(JSON.parse(backup));
+                    localStorage.removeItem('backup_data');
+                }
                 // 元のIDに戻す
                 this.userId = this.getUserId();
                 this.displayUserId();
@@ -220,16 +476,6 @@ const UserSync = {
         navigator.clipboard.writeText(userId).then(() => {
             this.showNotification('IDをコピーしました');
         });
-    },
-
-    toggleAutoSync(enabled) {
-        this.autoSyncEnabled = enabled;
-        localStorage.setItem('auto_sync', enabled);
-        
-        if (enabled) {
-            this.enableDataWatchers();
-            this.syncToCloud();
-        }
     },
 
     manualSync() {
@@ -271,6 +517,14 @@ const UserSync = {
         if (seconds < 3600) return `${Math.floor(seconds / 60)}分前`;
         if (seconds < 86400) return `${Math.floor(seconds / 3600)}時間前`;
         return `${Math.floor(seconds / 86400)}日前`;
+    },
+
+    refreshUI() {
+        if (typeof History !== 'undefined') History.renderHistory();
+        if (typeof Materials !== 'undefined') Materials.renderMaterialsList();
+        if (typeof Calculator !== 'undefined') Calculator.updateMaterialSelects();
+        if (typeof Goals !== 'undefined') Goals.render();
+        if (typeof Calendar !== 'undefined') Calendar.render();
     },
 
     closeModal() {
