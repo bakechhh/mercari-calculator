@@ -1,5 +1,6 @@
 // sw.js - Service Worker with Network First strategy
-const CACHE_NAME = 'mercari-calc-v2';
+const CACHE_VERSION = 'v2'; // バージョンを変更するとキャッシュが更新される
+const CACHE_NAME = `mercari-calc-${CACHE_VERSION}`;
 const urlsToCache = [
     '/',
     '/index.html',
