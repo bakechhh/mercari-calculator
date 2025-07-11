@@ -363,6 +363,7 @@ const Calculator = {
         }
     },
 
+
     showCustomMaterialInput(row) {
         // 既存のカスタム入力欄があれば削除
         const existingInput = row.querySelector('.custom-material-input');
@@ -385,8 +386,16 @@ const Calculator = {
         
         // selectの後に挿入
         const selectWrapper = row.querySelector('.material-select-wrapper');
-        selectWrapper.appendChild(customInput);
-        selectWrapper.appendChild(categoryInput);
+        if (selectWrapper) {
+            // 新しい検索型の場合
+            selectWrapper.appendChild(customInput);
+            selectWrapper.appendChild(categoryInput);
+        } else {
+            // 旧来の直接select型の場合（互換性のため）
+            const select = row.querySelector('.material-select');
+            select.parentNode.insertBefore(customInput, select.nextSibling);
+            customInput.parentNode.insertBefore(categoryInput, customInput.nextSibling);
+        }
     },
 
     hideCustomMaterialInput(row) {
