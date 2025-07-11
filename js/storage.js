@@ -5,7 +5,8 @@ const Storage = {
         SETTINGS: 'mercari_settings',
         THEME: 'mercari_theme',
         GOALS: 'mercari_goals',
-        RECORDS: 'mercari_records'
+        RECORDS: 'mercari_records',
+        FAVORITE_MATERIALS: 'mercari_favorite_materials'
     },
 
     // 売却データ
@@ -86,6 +87,17 @@ const Storage = {
         return true;
     },
 
+    // お気に入り材料
+    getFavoriteMaterials() {
+        const data = localStorage.getItem(this.KEYS.FAVORITE_MATERIALS);
+        return data ? JSON.parse(data) : [];
+    },
+
+    saveFavoriteMaterials(favorites) {
+        localStorage.setItem(this.KEYS.FAVORITE_MATERIALS, JSON.stringify(favorites));
+        return favorites;
+    },
+
     // 設定
     getSettings() {
         const data = localStorage.getItem(this.KEYS.SETTINGS);
@@ -108,45 +120,6 @@ const Storage = {
     setTheme(theme) {
         localStorage.setItem(this.KEYS.THEME, theme);
         return theme;
-    },
-
-    // エクスポート/インポート
-    exportData() {
-        return {
-            sales: this.getSales(),
-            materials: this.getMaterials(),
-            settings: this.getSettings(),
-            goals: this.getGoals(),
-            records: this.getRecords(),
-            exportDate: new Date().toISOString(),
-            version: '1.1'
-        };
-    },
-
-    importData(data) {
-        try {
-            if (data.sales) {
-                // インポート時に日付順にソート
-                data.sales.sort((a, b) => new Date(b.date) - new Date(a.date));
-                localStorage.setItem(this.KEYS.SALES, JSON.stringify(data.sales));
-            }
-            if (data.materials) {
-                localStorage.setItem(this.KEYS.MATERIALS, JSON.stringify(data.materials));
-            }
-            if (data.settings) {
-                localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(data.settings));
-            }
-            if (data.goals) {
-                localStorage.setItem(this.KEYS.GOALS, JSON.stringify(data.goals));
-            }
-            if (data.records) {
-                localStorage.setItem(this.KEYS.RECORDS, JSON.stringify(data.records));
-            }
-            return true;
-        } catch (error) {
-            console.error('Import error:', error);
-            return false;
-        }
     },
 
     // 目標データ
@@ -187,6 +160,49 @@ const Storage = {
     updateRecords(records) {
         localStorage.setItem(this.KEYS.RECORDS, JSON.stringify(records));
         return records;
+    },
+
+    // エクスポート/インポート
+    exportData() {
+        return {
+            sales: this.getSales(),
+            materials: this.getMaterials(),
+            settings: this.getSettings(),
+            goals: this.getGoals(),
+            records: this.getRecords(),
+            favoriteMaterials: this.getFavoriteMaterials(),
+            exportDate: new Date().toISOString(),
+            version: '1.2'
+        };
+    },
+
+    importData(data) {
+        try {
+            if (data.sales) {
+                // インポート時に日付順にソート
+                data.sales.sort((a, b) => new Date(b.date) - new Date(a.date));
+                localStorage.setItem(this.KEYS.SALES, JSON.stringify(data.sales));
+            }
+            if (data.materials) {
+                localStorage.setItem(this.KEYS.MATERIALS, JSON.stringify(data.materials));
+            }
+            if (data.settings) {
+                localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(data.settings));
+            }
+            if (data.goals) {
+                localStorage.setItem(this.KEYS.GOALS, JSON.stringify(data.goals));
+            }
+            if (data.records) {
+                localStorage.setItem(this.KEYS.RECORDS, JSON.stringify(data.records));
+            }
+            if (data.favoriteMaterials) {
+                localStorage.setItem(this.KEYS.FAVORITE_MATERIALS, JSON.stringify(data.favoriteMaterials));
+            }
+            return true;
+        } catch (error) {
+            console.error('Import error:', error);
+            return false;
+        }
     },
 
     // データクリア
