@@ -1360,3 +1360,165 @@ select:focus {
     margin-bottom: 0.5rem;
     color: #2196f3;
 }
+/* 材料選択ラッパー */
+.material-select-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.material-search {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* ドロップダウン */
+.material-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px var(--shadow);
+    z-index: 100;
+    margin-top: 0.25rem;
+}
+
+/* カテゴリーヘッダー */
+.dropdown-category {
+    padding: 0.75rem 1rem;
+    font-weight: bold;
+    color: var(--text-secondary);
+    background-color: var(--bg-secondary);
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.dropdown-category:hover {
+    background-color: var(--border-color);
+}
+
+.dropdown-category.collapsed + .category-items {
+    display: none;
+}
+
+.category-toggle {
+    margin-right: 0.5rem;
+    font-size: 0.75rem;
+}
+
+.category-icon {
+    margin-right: 0.5rem;
+}
+
+.category-count {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: normal;
+}
+
+/* カテゴリーアイテムコンテナ */
+.category-items {
+    transition: all 0.3s ease;
+}
+
+.category-items.hidden {
+    display: none;
+}
+
+/* ドロップダウンアイテム */
+.dropdown-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.dropdown-item:hover {
+    background-color: var(--bg-secondary);
+}
+
+.dropdown-item.favorite-item {
+    background-color: rgba(255, 215, 0, 0.05);
+}
+
+.dropdown-item-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.dropdown-item-detail {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* お気に入りボタン */
+.favorite-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    color: var(--text-secondary);
+    transition: var(--transition);
+}
+
+.favorite-btn:hover {
+    color: #ffd700;
+    transform: scale(1.2);
+}
+
+.favorite-btn.active {
+    color: #ffd700;
+}
+
+.favorite-star {
+    margin-right: 0.5rem;
+    color: #ffd700;
+}
+
+/* カスタム材料入力 */
+.custom-material-input,
+.custom-category-input {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .material-input-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .material-select-wrapper,
+    .material-quantity,
+    .material-price,
+    .remove-material-btn {
+        width: 100%;
+    }
+    
+    .material-dropdown {
+        max-height: 300px;
+    }
+}
