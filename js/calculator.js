@@ -69,30 +69,242 @@ const Calculator = {
     },
 
     addMaterialRow() {
-        // 既存の直接入力欄をすべて非表示にする
-        document.querySelectorAll('.material-input-row').forEach(row => {
-            const select = row.querySelector('.material-select');
-            if (select.value !== 'custom') {
-                this.hideCustomMaterialInput(row);
-            }
-        });
-        
         const container = document.getElementById('material-inputs');
         const row = document.createElement('div');
         row.className = 'material-input-row';
         
         row.innerHTML = `
-            <select class="material-select">
-                <option value="">材料を選択</option>
-                <option value="custom">直接入力</option>
-            </select>
+            <div class="material-select-wrapper">
+                <input type="text" 
+                       class="material-search" 
+                       placeholder="材料を検索..."
+                       autocomplete="off">
+                <select class="material-select" style="display: none;">
+                    <option value="">材料を選択</option>
+                    <option value="custom">直接入力</option>
+                </select>
+                <div class="material-dropdown" style="display: none;"></div>
+            </div>
             <input type="number" class="material-quantity" placeholder="数量" min="0" step="0.01">
             <input type="number" class="material-price" placeholder="単価" min="0" step="0.01">
             <button type="button" class="remove-material-btn">×</button>
         `;
         
         container.appendChild(row);
+        this.setupMaterialSearch(row);
         this.updateMaterialSelects();
+    },
+
+    setupMaterialSearch(row) {
+        const searchInput = row.querySelector('.material-search');
+        const dropdown = row.querySelector('.material-dropdown');
+        const select = row.querySelector('.material-select');
+        
+        // 検索入力時
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            this.showMaterialDropdown(row, query);
+        });
+        
+        // フォーカス時
+        searchInput.addEventListener('focus', () => {
+            this.showMaterialDropdown(row, '');
+        });
+        
+        // フォーカスアウト時
+        searchInput.addEventListener('blur', (e) => {
+            setTimeout(() => {
+                dropdown.style.display = 'none';
+            }, 200);
+        });
+    },
+
+    showMaterialDropdown(row, query) {
+        const dropdown = row.querySelector('.material-dropdown');
+        const materials = Storage.getMaterials();
+        const favorites = Storage.getFavoriteMaterials();
+        
+        // カテゴリー別にグループ化
+        const grouped = materials.reduce((acc, m) => {
+            const category = m.category || 'その他';
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(m);
+            return acc;
+        }, {});
+        
+        // お気に入り材料を抽出
+        const favoriteMaterials = materials.filter(m => favorites.includes(m.id));
+        
+        // 検索フィルタリング
+        const filteredGroups = {};
+        const filteredFavorites = [];
+        
+        // お気に入りをフィルタリング
+        if (favoriteMaterials.length > 0) {
+            const filtered = favoriteMaterials.filter(m => 
+                m.name.toLowerCase().includes(query) ||
+                (m.category || '').toLowerCase().includes(query)
+            );
+            if (filtered.length > 0) {
+                filteredFavorites.push(...filtered);
+            }
+        }
+        
+        // 通常の材料をフィルタリング
+        Object.entries(grouped).forEach(([category, items]) => {
+            const filtered = items.filter(m => 
+                m.name.toLowerCase().includes(query) ||
+                category.toLowerCase().includes(query)
+            );
+            if (filtered.length > 0) {
+                filteredGroups[category] = filtered;
+            }
+        });
+        
+        // カテゴリーの折りたたみ状態を取得
+        const collapsedCategories = this.getCollapsedCategories();
+        
+        // ドロップダウンHTML生成
+        dropdown.innerHTML = `
+            <div class="dropdown-item" data-value="custom">
+                <strong>直接入力</strong>
+            </div>
+            ${filteredFavorites.length > 0 ? `
+                <div class="dropdown-category">
+                    <span class="category-icon">⭐</span>
+                    お気に入り
+                </div>
+                ${filteredFavorites.map(m => `
+                    <div class="dropdown-item favorite-item" 
+                         data-value="${m.id}"
+                         data-price="${m.unitPrice}"
+                         data-unit="${m.unit}"
+                         data-category="${m.category}"
+                         data-name="${m.name}">
+                        <div class="dropdown-item-main">
+                            <span class="favorite-star">⭐</span>
+                            <span>${m.name}</span>
+                        </div>
+                        <div class="dropdown-item-detail">¥${m.unitPrice}/${m.unit}</div>
+                    </div>
+                `).join('')}
+            ` : ''}
+            ${Object.entries(filteredGroups).map(([category, items]) => `
+                <div class="dropdown-category ${collapsedCategories.includes(category) ? 'collapsed' : ''}" 
+                     data-category="${category}"
+                     onclick="Calculator.toggleCategory('${category}')">
+                    <span class="category-toggle">${collapsedCategories.includes(category) ? '▶' : '▼'}</span>
+                    ${category}
+                    <span class="category-count">(${items.length})</span>
+                </div>
+                <div class="category-items ${collapsedCategories.includes(category) ? 'hidden' : ''}">
+                    ${items.map(m => `
+                        <div class="dropdown-item" 
+                             data-value="${m.id}"
+                             data-price="${m.unitPrice}"
+                             data-unit="${m.unit}"
+                             data-category="${m.category}"
+                             data-name="${m.name}">
+                            <div class="dropdown-item-main">
+                                <span>${m.name}</span>
+                                <button class="favorite-btn ${favorites.includes(m.id) ? 'active' : ''}" 
+                                        onclick="event.stopPropagation(); Calculator.toggleFavorite('${m.id}', this)">
+                                    ${favorites.includes(m.id) ? '★' : '☆'}
+                                </button>
+                            </div>
+                            <div class="dropdown-item-detail">¥${m.unitPrice}/${m.unit}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('')}
+        `;
+        
+        // アイテムクリック時の処理
+        dropdown.querySelectorAll('.dropdown-item').forEach(item => {
+            if (!item.classList.contains('dropdown-category')) {
+                item.addEventListener('click', () => {
+                    this.selectMaterial(row, item);
+                });
+            }
+        });
+        
+        dropdown.style.display = 'block';
+    },
+
+    toggleCategory(category) {
+        const collapsed = this.getCollapsedCategories();
+        const index = collapsed.indexOf(category);
+        
+        if (index > -1) {
+            collapsed.splice(index, 1);
+        } else {
+            collapsed.push(category);
+        }
+        
+        localStorage.setItem('collapsed_categories', JSON.stringify(collapsed));
+        
+        // UIを更新
+        document.querySelectorAll('.material-dropdown').forEach(dropdown => {
+            if (dropdown.style.display !== 'none') {
+                const searchInput = dropdown.parentElement.querySelector('.material-search');
+                const query = searchInput ? searchInput.value.toLowerCase() : '';
+                this.showMaterialDropdown(dropdown.parentElement.parentElement, query);
+            }
+        });
+    },
+
+    getCollapsedCategories() {
+        const stored = localStorage.getItem('collapsed_categories');
+        return stored ? JSON.parse(stored) : [];
+    },
+
+    toggleFavorite(materialId, button) {
+        const favorites = Storage.getFavoriteMaterials();
+        const index = favorites.indexOf(materialId);
+        
+        if (index > -1) {
+            favorites.splice(index, 1);
+            button.classList.remove('active');
+            button.textContent = '☆';
+        } else {
+            favorites.push(materialId);
+            button.classList.add('active');
+            button.textContent = '★';
+        }
+        
+        Storage.saveFavoriteMaterials(favorites);
+        
+        // 他のドロップダウンも更新
+        document.querySelectorAll('.material-dropdown').forEach(dropdown => {
+            if (dropdown.style.display !== 'none') {
+                const searchInput = dropdown.parentElement.querySelector('.material-search');
+                const query = searchInput ? searchInput.value.toLowerCase() : '';
+                this.showMaterialDropdown(dropdown.parentElement.parentElement, query);
+            }
+        });
+    },
+
+    selectMaterial(row, item) {
+        const searchInput = row.querySelector('.material-search');
+        const select = row.querySelector('.material-select');
+        const priceInput = row.querySelector('.material-price');
+        const dropdown = row.querySelector('.material-dropdown');
+        
+        const value = item.dataset.value;
+        select.value = value;
+        
+        if (value === 'custom') {
+            searchInput.value = '直接入力';
+            this.showCustomMaterialInput(row);
+            priceInput.value = '';
+        } else {
+            searchInput.value = item.dataset.name;
+            this.hideCustomMaterialInput(row);
+            priceInput.value = item.dataset.price;
+        }
+        
+        dropdown.style.display = 'none';
+        this.calculate();
     },
 
     removeMaterialRow(button) {
@@ -113,7 +325,11 @@ const Calculator = {
                 <option value="">材料を選択</option>
                 <option value="custom">直接入力</option>
                 ${materials.map(m => `
-                    <option value="${m.id}" data-price="${m.unitPrice}" data-unit="${m.unit}">
+                    <option value="${m.id}" 
+                            data-price="${m.unitPrice}" 
+                            data-unit="${m.unit}"
+                            data-category="${m.category || ''}"
+                            data-name="${m.name}">
                         ${m.name} (¥${m.unitPrice}/${m.unit})
                     </option>
                 `).join('')}
@@ -150,6 +366,7 @@ const Calculator = {
     showCustomMaterialInput(row) {
         // 既存のカスタム入力欄があれば削除
         const existingInput = row.querySelector('.custom-material-input');
+        const existingCategory = row.querySelector('.custom-category-input');
         if (existingInput) return;
         
         // カスタム材料名入力欄を追加
@@ -159,15 +376,27 @@ const Calculator = {
         customInput.placeholder = '材料名を入力';
         customInput.required = true;
         
+        // カテゴリー入力欄を追加（オプション）
+        const categoryInput = document.createElement('input');
+        categoryInput.type = 'text';
+        categoryInput.className = 'custom-category-input';
+        categoryInput.placeholder = 'カテゴリー（任意）';
+        categoryInput.style.marginTop = '0.5rem';
+        
         // selectの後に挿入
-        const select = row.querySelector('.material-select');
-        select.parentNode.insertBefore(customInput, select.nextSibling);
+        const selectWrapper = row.querySelector('.material-select-wrapper');
+        selectWrapper.appendChild(customInput);
+        selectWrapper.appendChild(categoryInput);
     },
 
     hideCustomMaterialInput(row) {
         const customInput = row.querySelector('.custom-material-input');
+        const categoryInput = row.querySelector('.custom-category-input');
         if (customInput) {
             customInput.remove();
+        }
+        if (categoryInput) {
+            categoryInput.remove();
         }
     },
 
@@ -232,13 +461,16 @@ const Calculator = {
                 if (select.value === 'custom') {
                     // カスタム材料名入力欄から名前を取得
                     const customInput = row.querySelector('.custom-material-input');
+                    const categoryInput = row.querySelector('.custom-category-input');
                     material.name = customInput ? customInput.value : '直接入力材料';
                     material.id = null;
+                    material.category = categoryInput && categoryInput.value ? categoryInput.value : '直接入力';
                 } else {
                     const option = select.querySelector(`option[value="${select.value}"]`);
                     material.id = select.value;
-                    material.name = option.textContent.split(' (')[0];
+                    material.name = option.dataset.name || option.textContent.split(' (')[0];
                     material.unit = option.dataset.unit;
+                    material.category = option.dataset.category || 'その他';  // カテゴリー情報を取得
                 }
                 
                 materialsData.push(material);
@@ -301,16 +533,25 @@ const Calculator = {
             row.className = 'material-input-row';
             
             row.innerHTML = `
-                <select class="material-select">
-                    <option value="">材料を選択</option>
-                    <option value="custom">直接入力</option>
-                </select>
+                <div class="material-select-wrapper">
+                    <input type="text" 
+                           class="material-search" 
+                           placeholder="材料を検索..."
+                           autocomplete="off"
+                           value="${material.name}">
+                    <select class="material-select" style="display: none;">
+                        <option value="">材料を選択</option>
+                        <option value="custom">直接入力</option>
+                    </select>
+                    <div class="material-dropdown" style="display: none;"></div>
+                </div>
                 <input type="number" class="material-quantity" placeholder="数量" min="0" step="0.01" value="${material.quantity}">
                 <input type="number" class="material-price" placeholder="単価" min="0" step="0.01" value="${material.unitPrice}">
                 <button type="button" class="remove-material-btn">×</button>
             `;
             
             container.appendChild(row);
+            this.setupMaterialSearch(row);
         });
         
         // 材料選択肢を更新
@@ -330,8 +571,12 @@ const Calculator = {
                 select.value = 'custom';
                 this.showCustomMaterialInput(row);
                 const customInput = row.querySelector('.custom-material-input');
+                const categoryInput = row.querySelector('.custom-category-input');
                 if (customInput) {
                     customInput.value = material.name;
+                }
+                if (categoryInput && material.category) {
+                    categoryInput.value = material.category;
                 }
             }
         });
@@ -550,3 +795,6 @@ const Calculator = {
         }, 2000);
     }
 };
+
+// グローバルスコープに公開（onclickイベント用）
+window.Calculator = Calculator;
