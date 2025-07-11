@@ -144,15 +144,17 @@ const UserSync = {
 
     enableDataWatchers() {
         // Storage の各保存メソッドをラップ
-        const methods = ['saveSale', 'updateSale', 'deleteSale', 'saveMaterial', 'updateMaterial', 'deleteMaterial', 'saveGoal', 'saveSettings'];
+        const methods = ['saveSale', 'updateSale', 'deleteSale', 'saveMaterial', 'updateMaterial', 'deleteMaterial', 'saveGoal', 'saveSettings', 'saveFavoriteMaterials'];
         
         methods.forEach(method => {
             const original = Storage[method];
-            Storage[method] = (...args) => {
-                const result = original.apply(Storage, args);
-                this.scheduleSync();
-                return result;
-            };
+            if (original) {
+                Storage[method] = (...args) => {
+                    const result = original.apply(Storage, args);
+                    this.scheduleSync();
+                    return result;
+                };
+            }
         });
     },
 
@@ -342,6 +344,47 @@ const UserSync = {
         // 目標データのマージ
         if (localData.goals && remoteData.goals) {
             merged.goals = { ...remoteData.goals, ...localData.goals };
+        }
+        
+        // お気に入り材料のマージ
+        if (localData.favoriteMaterials || remoteData.favoriteMaterials) {
+            // お気に入りは両方のデータを結合して重複を削除
+            const localFavs = localData.favoriteMaterials || [];
+            const remoteFavs = remoteData.favoriteMaterials || [];
+            merged.favoriteMaterials = [...new Set([...localFavs, ...remoteFavs])];
+        }
+        
+        // 記録データのマージ（より良い記録を保持）
+        if (localData.records && remoteData.records) {
+            merged.records = {
+                maxMonthlySales: {
+                    amount: Math.max(
+                        localData.records.maxMonthlySales?.amount || 0,
+                        remoteData.records.maxMonthlySales?.amount || 0
+                    ),
+                    yearMonth: localData.records.maxMonthlySales?.amount > remoteData.records.maxMonthlySales?.amount ?
+                        localData.records.maxMonthlySales?.yearMonth :
+                        remoteData.records.maxMonthlySales?.yearMonth
+                },
+                maxMonthlySalesCount: {
+                    count: Math.max(
+                        localData.records.maxMonthlySalesCount?.count || 0,
+                        remoteData.records.maxMonthlySalesCount?.count || 0
+                    ),
+                    yearMonth: localData.records.maxMonthlySalesCount?.count > remoteData.records.maxMonthlySalesCount?.count ?
+                        localData.records.maxMonthlySalesCount?.yearMonth :
+                        remoteData.records.maxMonthlySalesCount?.yearMonth
+                },
+                maxAchievementRate: {
+                    rate: Math.max(
+                        localData.records.maxAchievementRate?.rate || 0,
+                        remoteData.records.maxAchievementRate?.rate || 0
+                    ),
+                    yearMonth: localData.records.maxAchievementRate?.rate > remoteData.records.maxAchievementRate?.rate ?
+                        localData.records.maxAchievementRate?.yearMonth :
+                        remoteData.records.maxAchievementRate?.yearMonth
+                }
+            };
         }
         
         return merged;
